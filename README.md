@@ -99,7 +99,7 @@ only apply if you build the bundled example, tests, or benchmarks with the provi
 | `SPDLITE_BUILD_EXAMPLE`  | `ON`    | Build the example executable.                                          |
 | `SPDLITE_BUILD_TESTS`    | `OFF`   | Build the doctest-based unit tests.                                    |
 | `SPDLITE_BUILD_BENCH`    | `OFF`   | Build the benchmarks (fetches Google Benchmark automatically).         |
-| `SPDLITE_USE_STD_FORMAT` | unset   | Compile-time define: use `<format>` instead of bundled fmt — drop `fmt/` from the install. Pass via `-DCMAKE_CXX_FLAGS=-DSPDLITE_USE_STD_FORMAT`. |
+| `SPDLITE_USE_STD_FORMAT` | `OFF`   | CMake option: use `<format>` instead of bundled fmt — drop `fmt/` from the install. Pass via `-DSPDLITE_USE_STD_FORMAT=ON`. |
 
 ## Benchmarks
 

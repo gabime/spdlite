@@ -56,11 +56,11 @@ jobs:
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSPDLITE_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS=-DSPDLITE_USE_STD_FORMAT .
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSPDLITE_BUILD_TESTS=ON -DSPDLITE_USE_STD_FORMAT=ON .
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
-        run: cmake -B build -DSPDLITE_BUILD_TESTS=ON -DCMAKE_CXX_FLAGS=-DSPDLITE_USE_STD_FORMAT .
+        run: cmake -B build -DSPDLITE_BUILD_TESTS=ON -DSPDLITE_USE_STD_FORMAT=ON .
 
       - name: Build
         run: cmake --build build --config Release -j
