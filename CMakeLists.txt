@@ -40,9 +40,6 @@ target_include_directories(spdlite INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 target_compile_features(spdlite INTERFACE cxx_std_20)
-if(MSVC)
-    target_compile_options(spdlite INTERFACE /utf-8)
-endif()
 
 # Example
 if(SPDLITE_BUILD_EXAMPLE)
