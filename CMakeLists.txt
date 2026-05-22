@@ -21,6 +21,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(SPDLITE_BUILD_EXAMPLE    "Build spdlite example"                  ON)
 option(SPDLITE_BUILD_TESTS      "Build spdlite unit tests (doctest)"     OFF)
 option(SPDLITE_BUILD_BENCH      "Build spdlite benchmarks"               OFF)
+option(SPDLITE_USE_STD_FORMAT   "Use std::format instead of bundled fmt" OFF)
 
 # Header files (for IDE visibility only - not compiled)
 set(SPDLITE_HEADERS
@@ -40,9 +41,11 @@ target_include_directories(spdlite INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 target_compile_features(spdlite INTERFACE cxx_std_20)
-if(MSVC)
-    target_compile_options(spdlite INTERFACE /utf-8)
+if(SPDLITE_USE_STD_FORMAT)
+    target_compile_definitions(spdlite INTERFACE SPDLITE_USE_STD_FORMAT)
 endif()
+# MSVC requires /utf-8 for fmt's Unicode support (FMT_UNICODE=1 is the default).
+target_compile_options(spdlite INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 
 # Example
 if(SPDLITE_BUILD_EXAMPLE)

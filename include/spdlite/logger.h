@@ -3,6 +3,11 @@
 
 #pragma once
 
+#ifdef _MSC_VER
+    // fmt checks that source literals are UTF-8 on Windows; enforce UTF-8 source encoding for this header.
+    #pragma execution_character_set("utf-8")
+#endif
+
 #include <cstdio>
 #include <iterator>
 #include <mutex>
