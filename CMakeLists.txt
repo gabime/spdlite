@@ -44,6 +44,8 @@ target_compile_features(spdlite INTERFACE cxx_std_20)
 if(SPDLITE_USE_STD_FORMAT)
     target_compile_definitions(spdlite INTERFACE SPDLITE_USE_STD_FORMAT)
 endif()
+# MSVC requires /utf-8 for fmt's Unicode support (FMT_UNICODE=1 is the default).
+target_compile_options(spdlite INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 
 # Example
 if(SPDLITE_BUILD_EXAMPLE)
