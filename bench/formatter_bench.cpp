@@ -8,7 +8,7 @@
 using namespace spdlite;
 
 // appends: header + payload + \r?\n - mirrors what logger does per call
-static inline void format_line(formatter& fmt, memory_buf_t& dest, log_clock::time_point t, level lvl, string_view_t payload) {
+static inline void format_line(formatter& fmt, memory_buf_t& dest, log_clock::time_point t, level lvl, std::string_view payload) {
     fmt.format_header(t, lvl, dest);
     dest.append(payload.data(), payload.data() + payload.size());
 #ifdef _WIN32
@@ -46,7 +46,7 @@ static void bench_format_long(benchmark::State& state) {
     formatter fmt("mylogger");
     memory_buf_t buf;
     auto now = log_clock::now();
-    string_view_t payload =
+    std::string_view payload =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum pharetra metus cursus "
         "lacus placerat congue. Nulla egestas, mauris a tincidunt tempus, enim lectus volutpat mi, "
         "eu consequat sem libero nec massa. In dapibus ipsum a diam rhoncus gravida. Etiam non dapibus eros. Donec "
