@@ -6,7 +6,30 @@ Use spdlite if you want a tiny, fast, capable logger.
 
 ## Install
 
-Just copy the `include/spdlite/` folder into your build tree.
+The simplest path: copy the `include/spdlite/` folder into your build tree — no build step, header-only.
+
+To consume it via CMake instead, either install it and use `find_package`:
+
+```bash
+cmake -B build .
+cmake --install build --prefix /your/prefix
+```
+
+```cmake
+find_package(spdlite REQUIRED)
+target_link_libraries(your_app PRIVATE spdlite::spdlite)
+```
+
+or pull it in directly with `FetchContent` (or `add_subdirectory`):
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(spdlite
+    GIT_REPOSITORY https://github.com/gabime/spdlite.git
+    GIT_TAG main)
+FetchContent_MakeAvailable(spdlite)
+target_link_libraries(your_app PRIVATE spdlite::spdlite)
+```
 
 ## Quick start
 ```c++
