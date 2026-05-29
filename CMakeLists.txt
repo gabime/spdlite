@@ -18,9 +18,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ---- Build options ----
+option(SPDLITE_BUILD_ALL        "Build everything (example, tests, bench)" OFF)
 option(SPDLITE_BUILD_EXAMPLE    "Build spdlite example"                  ON)
 option(SPDLITE_BUILD_TESTS      "Build spdlite unit tests (doctest)"     OFF)
 option(SPDLITE_BUILD_BENCH      "Build spdlite benchmarks"               OFF)
+
+if(SPDLITE_BUILD_ALL)
+    set(SPDLITE_BUILD_EXAMPLE ON)
+    set(SPDLITE_BUILD_TESTS   ON)
+    set(SPDLITE_BUILD_BENCH   ON)
+endif()
 
 # Header files (for IDE visibility only - not compiled)
 set(SPDLITE_HEADERS
