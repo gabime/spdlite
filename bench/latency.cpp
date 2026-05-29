@@ -129,7 +129,7 @@ static void bench_formatter_only(benchmark::State& state) {
     formatter fmt("bench");
     memory_buf_t buf;
     auto now = log_clock::now();
-    string_view_t payload = "Hello logger: msg number 12345...............";
+    std::string_view payload = "Hello logger: msg number 12345...............";
     for (auto _ : state) {
         buf.clear();
         fmt.format_header(now, level::info, buf);
