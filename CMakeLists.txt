@@ -49,6 +49,9 @@ target_include_directories(spdlite INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 target_compile_features(spdlite INTERFACE cxx_std_20)
+if(SPDLITE_USE_STD_FORMAT)
+    target_compile_definitions(spdlite INTERFACE SPDLITE_USE_STD_FORMAT)
+endif()
 add_library(spdlite::spdlite ALIAS spdlite)
 
 # Example
