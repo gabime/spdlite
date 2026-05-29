@@ -22,6 +22,8 @@ add_executable(spdlite_tests
     test_file_sink.cpp
     test_rotating_file_sink.cpp
     test_null_sink.cpp
+    test_stdout_sink.cpp
+    test_console_sink.cpp
     test_shared_sink.cpp
     test_thread_safety.cpp
     test_log_macros_warn.cpp
