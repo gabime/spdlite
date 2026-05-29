@@ -1,0 +1,38 @@
+name: Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: msvc
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure
+        run: cmake -B build -DSPDLITE_BUILD_TESTS=ON .
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release
+
+  test-std-format:
+    name: msvc / SPDLITE_USE_STD_FORMAT
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure
+        run: cmake -B build -DSPDLITE_BUILD_TESTS=ON -DSPDLITE_USE_STD_FORMAT=ON .
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release

@@ -1,0 +1,50 @@
+name: Linux
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: ${{ matrix.compiler }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { compiler: gcc,   cc: gcc,   cxx: g++ }
+          - { compiler: clang, cc: clang, cxx: clang++ }
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSPDLITE_BUILD_TESTS=ON .
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release
+
+  test-std-format:
+    name: gcc / SPDLITE_USE_STD_FORMAT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure
+        env:
+          CC: gcc
+          CXX: g++
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSPDLITE_BUILD_TESTS=ON -DSPDLITE_USE_STD_FORMAT=ON .
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release

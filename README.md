@@ -1,5 +1,9 @@
 # spdlite
 
+[![Linux](https://github.com/gabime/spdlite/actions/workflows/linux.yml/badge.svg)](https://github.com/gabime/spdlite/actions/workflows/linux.yml)
+[![macOS](https://github.com/gabime/spdlite/actions/workflows/macos.yml/badge.svg)](https://github.com/gabime/spdlite/actions/workflows/macos.yml)
+[![Windows](https://github.com/gabime/spdlite/actions/workflows/windows.yml/badge.svg)](https://github.com/gabime/spdlite/actions/workflows/windows.yml)
+
 A small, header-only C++20 logger - the lite version of [spdlog](https://github.com/gabime/spdlog), simpler, smaller, fewer features.
 
 Use spdlite if you want a tiny, fast, capable logger.

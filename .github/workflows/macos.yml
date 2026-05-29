@@ -1,0 +1,44 @@
+name: macOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: clang
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSPDLITE_BUILD_TESTS=ON .
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release
+
+  test-std-format:
+    name: clang / SPDLITE_USE_STD_FORMAT
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSPDLITE_BUILD_TESTS=ON -DSPDLITE_USE_STD_FORMAT=ON .
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release
