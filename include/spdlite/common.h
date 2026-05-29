@@ -26,6 +26,12 @@
     #ifndef FMT_HEADER_ONLY
         #define FMT_HEADER_ONLY
     #endif
+    #ifndef FMT_UNICODE
+        #define FMT_UNICODE 0  // spdlite doesn't need unicode; avoids requiring MSVC /utf-8
+    #endif
+    #ifndef FMT_USE_LOCALE
+        #define FMT_USE_LOCALE 0  // spdlite never uses {:L}; drops <locale> and locale code
+    #endif
     #include "fmt/base.h"
     #include "fmt/format.h"
 #endif
