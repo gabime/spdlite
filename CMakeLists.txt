@@ -23,6 +23,7 @@ option(SPDLITE_BUILD_EXAMPLE    "Build spdlite example"                  ON)
 option(SPDLITE_BUILD_TESTS      "Build spdlite unit tests (doctest)"     OFF)
 option(SPDLITE_BUILD_BENCH      "Build spdlite benchmarks"               OFF)
 option(SPDLITE_USE_STD_FORMAT   "Use std::format instead of bundled fmt" OFF)
+option(SPDLITE_INSTALL          "Generate install target"               ${PROJECT_IS_TOP_LEVEL})
 
 if(SPDLITE_BUILD_ALL)
     set(SPDLITE_BUILD_EXAMPLE ON)
@@ -48,6 +49,7 @@ target_include_directories(spdlite INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 target_compile_features(spdlite INTERFACE cxx_std_20)
+add_library(spdlite::spdlite ALIAS spdlite)
 
 # Example
 if(SPDLITE_BUILD_EXAMPLE)
@@ -86,4 +88,38 @@ endif()
 if(SPDLITE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+# ---- Install / export ----
+# Header-only: install the headers and an exported spdlite::spdlite target so
+# consumers can `find_package(spdlite)`. The bundled fmt/ headers ship along
+# with the include directory.
+if(SPDLITE_INSTALL)
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
+    set(SPDLITE_CMAKE_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/spdlite")
+
+    install(TARGETS spdlite EXPORT spdliteTargets)
+    install(DIRECTORY include/spdlite DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+    install(EXPORT spdliteTargets
+        FILE spdliteTargets.cmake
+        NAMESPACE spdlite::
+        DESTINATION ${SPDLITE_CMAKE_DIR})
+
+    configure_package_config_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/spdliteConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/spdliteConfig.cmake
+        INSTALL_DESTINATION ${SPDLITE_CMAKE_DIR})
+
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/spdliteConfigVersion.cmake
+        VERSION ${SPDLITE_VERSION}
+        COMPATIBILITY SameMajorVersion)
+
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/spdliteConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/spdliteConfigVersion.cmake
+        DESTINATION ${SPDLITE_CMAKE_DIR})
 endif()
