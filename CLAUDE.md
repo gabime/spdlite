@@ -14,13 +14,21 @@ cmake -B build .
 cmake --build build
 
 # build with std::format instead of bundled fmt
-cmake -B build -DCMAKE_CXX_FLAGS="-DSPDLITE_USE_STD_FORMAT" .
+cmake -B build -DSPDLITE_USE_STD_FORMAT=ON .
 cmake --build build
+
+# build + run tests (doctest - fetched automatically)
+cmake -B build -DSPDLITE_BUILD_TESTS=ON .
+cmake --build build
+ctest --test-dir build --output-on-failure
 
 # build benchmarks (requires Google Benchmark - fetched automatically)
 cmake -B build -DSPDLITE_BUILD_BENCH=ON .
 cmake --build build
-# or use the shortcut: ./build.sh (benchmarks + Release)
+
+# build everything (example + tests + bench)
+cmake -B build -DSPDLITE_BUILD_ALL=ON .
+cmake --build build
 
 # run
 ./build/example          # or build/Debug/example.exe on MSVC
@@ -32,7 +40,7 @@ cmake --build build
 ./build/vs_spdlog
 ```
 
-No test suite exists yet. Formatting is governed by `.clang-format` (Google base, 4-space indent, 130-col limit) - run `clang-format -i <files>` before committing.
+Tests live under `tests/` (doctest, fetched via FetchContent) and run with `ctest`. CI exercises gcc/clang/msvc against both the bundled fmt and `SPDLITE_USE_STD_FORMAT=ON`. Formatting is governed by `.clang-format` (Google base, 4-space indent, 130-col limit) - run `clang-format -i <files>` before committing.
 
 A pre-commit hook in `.githooks/pre-commit` formats staged C/C++ files automatically. Enable it once per clone with `git config core.hooksPath .githooks` (preserves any global `pre-push` via a delegate).
 
