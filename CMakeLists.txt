@@ -22,6 +22,7 @@ option(SPDLITE_BUILD_ALL        "Build everything (example, tests, bench)" OFF)
 option(SPDLITE_BUILD_EXAMPLE    "Build spdlite example"                  ON)
 option(SPDLITE_BUILD_TESTS      "Build spdlite unit tests (doctest)"     OFF)
 option(SPDLITE_BUILD_BENCH      "Build spdlite benchmarks"               OFF)
+option(SPDLITE_USE_STD_FORMAT   "Use std::format instead of bundled fmt" OFF)
 
 if(SPDLITE_BUILD_ALL)
     set(SPDLITE_BUILD_EXAMPLE ON)

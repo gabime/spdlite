@@ -34,7 +34,7 @@ int main() {
 // the logger is provably single-threaded - it skips locking entirely.
 void banner() {
     using namespace spdlite;
-    logger console(console_sink{});
+    logger<console_sink> console(console_sink{});
     console.info(R"(
                 ____ ___ __
    _________  ____/ / (.) /____
@@ -50,7 +50,7 @@ void banner() {
 // By default, the threshold is info; enable trace explicitly to see everything.
 void log_levels() {
     using namespace spdlite;
-    logger console(console_sink{});
+    logger<console_sink> console(console_sink{});
     console.set_log_level(level::trace);
 
     console.trace("This is a {} message", "trace");
@@ -65,7 +65,7 @@ void log_levels() {
 // Default shape: [YYYY-MM-DD HH:MM:SS.mmm] [name] [LVL] payload
 void format_options_example() {
     using namespace spdlite;
-    logger log(console_sink{});
+    logger<console_sink> log(console_sink{});
 
     log.set_format_options({.utc = true});
     log.set_format_options({.show_date = false});
@@ -89,7 +89,7 @@ void rotating_file_sink_example() {
     using namespace spdlite;
     constexpr std::size_t max_size = 256;
     constexpr std::size_t max_files = 3;
-    logger rot(rotating_file_sink{"logs/rot.txt", max_size, max_files});
+    logger<rotating_file_sink> rot(rotating_file_sink{"logs/rot.txt", max_size, max_files});
     for (int i = 0; i < 2000; ++i) {
         rot.info("rotating message #{:03}", i);
     }
@@ -123,7 +123,7 @@ void shared_file_sink_example() {
 // shared across threads.
 void compile_time_gating_example() {
     using namespace spdlite;
-    logger_st console(console_sink{});
+    logger_st<console_sink> console(console_sink{});
     SPDLITE_DEBUG(console, "debug message — visible at LEVEL_TRACE/DEBUG, elided at LEVEL_INFO+");
     SPDLITE_INFO(console, "info message — always compiled in unless built at LEVEL_WARN or higher");
 }
