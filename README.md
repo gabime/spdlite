@@ -10,30 +10,8 @@ Use spdlite if you want a tiny, fast, capable logger.
 
 ## Install
 
-The simplest path: copy the `include/spdlite/` folder into your build tree — no build step, header-only.
-
-To consume it via CMake instead, either install it and use `find_package`:
-
-```bash
-cmake -B build .
-cmake --install build --prefix /your/prefix
-```
-
-```cmake
-find_package(spdlite REQUIRED)
-target_link_libraries(your_app PRIVATE spdlite::spdlite)
-```
-
-or pull it in directly with `FetchContent` (or `add_subdirectory`):
-
-```cmake
-include(FetchContent)
-FetchContent_Declare(spdlite
-    GIT_REPOSITORY https://github.com/gabime/spdlite.git
-    GIT_TAG main)
-FetchContent_MakeAvailable(spdlite)
-target_link_libraries(your_app PRIVATE spdlite::spdlite)
-```
+Copy the `include/spdlite/` folder into your build tree — header-only, no build step.
+Or via CMake (`find_package`, `FetchContent`, or `add_subdirectory`), link `spdlite::spdlite`.
 
 ## Quick start
 ```c++
@@ -114,6 +92,17 @@ Macros: `SPDLITE_TRACE`, `SPDLITE_DEBUG`, `SPDLITE_INFO`, `SPDLITE_WARN`, `SPDLI
 `SPDLITE_CRITICAL`. Levels: `SPDLITE_LEVEL_TRACE` (0) ... `SPDLITE_LEVEL_OFF` (6). Per-TU
 setting; default is `SPDLITE_LEVEL_TRACE` (no elision). The compile-time gate is independent
 of the runtime `set_log_level()` — a call emits only when both gates pass.
+
+## Compile times
+
+Most of a logging TU's compile cost is the bundled fmt headers. To cut it:
+
+- **Use `std::format`** — `-DSPDLITE_USE_STD_FORMAT=ON`. ~20% faster per TU, zero runtime cost,
+  no API change. Needs a modern stdlib (libstdc++ 13+, libc++ 17+, MSVC 19.29+).
+- **Gate out cold log calls** — see *Compile-time level gating* above; elided calls cost nothing.
+
+Advanced: fmt can be compiled once instead of header-only (a bigger per-TU win), but it gives
+up header-only and couples a small impl TU to the vendored fmt version. Prefer `std::format` first.
 
 ## Build options
 
