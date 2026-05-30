@@ -99,6 +99,10 @@ Most of a logging TU's compile cost is the bundled fmt headers. To cut it:
 
 - **Gate out cold log calls** — see *Compile-time level gating* above; elided calls cost nothing,
   at compile time and runtime.
+- **Compile fmt once** — `-DSPDLITE_COMPILED_FMT=ON` builds fmt's implementation into a small
+  static lib instead of header-only, so logging TUs compile much faster (~60% per TU) with **no**
+  runtime cost and identical output. Worth it from ~2 logging TUs up; gives up pure header-only
+  (consumers link the lib — automatic via `spdlite::spdlite`).
 - **Use `std::format`** — `-DSPDLITE_USE_STD_FORMAT=ON` drops the bundled fmt headers and compiles
   ~20% faster per TU, but it is a compile-time-for-runtime trade: libstdc++'s `std::format` is
   ~1.3–2× slower than bundled fmt on typical messages, so fmt stays the default. Needs a modern
@@ -116,6 +120,7 @@ only apply if you build the bundled example, tests, or benchmarks with the provi
 | `SPDLITE_BUILD_TESTS`    | `OFF`   | Build the doctest-based unit tests.                                    |
 | `SPDLITE_BUILD_BENCH`    | `OFF`   | Build the benchmarks (fetches Google Benchmark automatically).         |
 | `SPDLITE_USE_STD_FORMAT` | `OFF`   | CMake option: use `<format>` instead of bundled fmt — drop `fmt/` from the install. Pass via `-DSPDLITE_USE_STD_FORMAT=ON`. |
+| `SPDLITE_COMPILED_FMT`   | `OFF`   | Compile bundled fmt once into a static lib (not header-only) — faster builds, links `spdlite_fmt`. Mutually exclusive with `SPDLITE_USE_STD_FORMAT`. |
 
 ## Benchmarks
 

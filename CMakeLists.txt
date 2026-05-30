@@ -23,7 +23,12 @@ option(SPDLITE_BUILD_EXAMPLE    "Build spdlite example"                  ON)
 option(SPDLITE_BUILD_TESTS      "Build spdlite unit tests (doctest)"     OFF)
 option(SPDLITE_BUILD_BENCH      "Build spdlite benchmarks"               OFF)
 option(SPDLITE_USE_STD_FORMAT   "Use std::format instead of bundled fmt" OFF)
+option(SPDLITE_COMPILED_FMT     "Compile bundled fmt once (not header-only)" OFF)
 option(SPDLITE_INSTALL          "Generate install target"               ${PROJECT_IS_TOP_LEVEL})
+
+if(SPDLITE_COMPILED_FMT AND SPDLITE_USE_STD_FORMAT)
+    message(FATAL_ERROR "SPDLITE_COMPILED_FMT and SPDLITE_USE_STD_FORMAT are mutually exclusive")
+endif()
 
 if(SPDLITE_BUILD_ALL)
     set(SPDLITE_BUILD_EXAMPLE ON)
@@ -53,6 +58,17 @@ if(SPDLITE_USE_STD_FORMAT)
     target_compile_definitions(spdlite INTERFACE SPDLITE_USE_STD_FORMAT)
 endif()
 add_library(spdlite::spdlite ALIAS spdlite)
+
+# Opt-in: compile fmt's out-of-line implementation once into a small static lib
+# that consumers link, instead of header-only fmt in every TU (faster compiles).
+if(SPDLITE_COMPILED_FMT)
+    add_library(spdlite_fmt STATIC src/spdlite_fmt.cpp)
+    target_include_directories(spdlite_fmt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_compile_features(spdlite_fmt PRIVATE cxx_std_20)
+    add_library(spdlite::fmt ALIAS spdlite_fmt)
+    target_link_libraries(spdlite INTERFACE spdlite_fmt)
+    target_compile_definitions(spdlite INTERFACE SPDLITE_COMPILED_FMT)
+endif()
 
 # Example
 if(SPDLITE_BUILD_EXAMPLE)
@@ -103,7 +119,13 @@ if(SPDLITE_INSTALL)
 
     set(SPDLITE_CMAKE_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/spdlite")
 
-    install(TARGETS spdlite EXPORT spdliteTargets)
+    set(SPDLITE_INSTALL_TARGETS spdlite)
+    if(SPDLITE_COMPILED_FMT)
+        list(APPEND SPDLITE_INSTALL_TARGETS spdlite_fmt)
+    endif()
+
+    install(TARGETS ${SPDLITE_INSTALL_TARGETS} EXPORT spdliteTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(DIRECTORY include/spdlite DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
     install(EXPORT spdliteTargets

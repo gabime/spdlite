@@ -23,8 +23,13 @@
 #ifdef SPDLITE_USE_STD_FORMAT
     #include <format>
 #else
-    #ifndef FMT_HEADER_ONLY
-        #define FMT_HEADER_ONLY
+    // SPDLITE_COMPILED_FMT: fmt's out-of-line implementation is compiled once in a
+    // separate TU (src/spdlite_fmt.cpp) instead of header-only, so consuming TUs see
+    // declarations only and compile faster. Off by default = header-only fmt.
+    #ifndef SPDLITE_COMPILED_FMT
+        #ifndef FMT_HEADER_ONLY
+            #define FMT_HEADER_ONLY
+        #endif
     #endif
     #ifndef FMT_UNICODE
         #define FMT_UNICODE 0  // spdlite doesn't need unicode; avoids requiring MSVC /utf-8
