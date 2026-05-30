@@ -97,12 +97,12 @@ of the runtime `set_log_level()` — a call emits only when both gates pass.
 
 Most of a logging TU's compile cost is the bundled fmt headers. To cut it:
 
-- **Use `std::format`** — `-DSPDLITE_USE_STD_FORMAT=ON`. ~20% faster per TU, zero runtime cost,
-  no API change. Needs a modern stdlib (libstdc++ 13+, libc++ 17+, MSVC 19.29+).
-- **Gate out cold log calls** — see *Compile-time level gating* above; elided calls cost nothing.
-
-Advanced: fmt can be compiled once instead of header-only (a bigger per-TU win), but it gives
-up header-only and couples a small impl TU to the vendored fmt version. Prefer `std::format` first.
+- **Gate out cold log calls** — see *Compile-time level gating* above; elided calls cost nothing,
+  at compile time and runtime.
+- **Use `std::format`** — `-DSPDLITE_USE_STD_FORMAT=ON` drops the bundled fmt headers and compiles
+  ~20% faster per TU, but it is a compile-time-for-runtime trade: libstdc++'s `std::format` is
+  ~1.3–2× slower than bundled fmt on typical messages, so fmt stays the default. Needs a modern
+  stdlib (libstdc++ 13+, libc++ 17+, MSVC 19.29+).
 
 ## Build options
 
