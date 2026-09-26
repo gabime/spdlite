@@ -20,7 +20,7 @@ Or via CMake (`find_package`, `FetchContent`, or `add_subdirectory`), link `spdl
 
 int main() {
     using namespace spdlite;
-    logger_mt<console_sink> log("app");
+    logger_mt<console_sink> log;
 
     log.info("Hello {}", "world");
     log.info("Value: {}", 42);
