@@ -35,7 +35,7 @@ TEST_CASE("sinks-only ctor produces an empty name and no name bracket in the hea
 
 TEST_CASE("sinkless logger defaults to level off") {
     logger_st<> unnamed;
-    logger<> named{"noop"};
+    logger_mt<> named{"noop"};
     CHECK(unnamed.get_log_level() == level::off);
     CHECK(named.get_log_level() == level::off);
     CHECK(named.get_name() == "noop");

@@ -111,7 +111,7 @@ static void spdlog_color_st(benchmark::State& state) {
 // --- color stdout (multi-threaded) ---
 
 static void spdlite_color_mt(benchmark::State& state) {
-    static spdlite::logger<spdlite::console_sink> log("bench", spdlite::console_sink{});
+    static spdlite::logger_mt<spdlite::console_sink> log("bench", spdlite::console_sink{});
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -157,7 +157,7 @@ static void spdlog_file_st(benchmark::State& state) {
 // --- basic file sink (multi-threaded) ---
 
 static void spdlite_file_mt(benchmark::State& state) {
-    static spdlite::logger<spdlite::file_sink> log(
+    static spdlite::logger_mt<spdlite::file_sink> log(
         "bench", spdlite::file_sink{bench_dir() / "vs_basic_mt.log", spdlite::open_mode::truncate});
     int i = 0;
     for (auto _ : state) {
@@ -217,9 +217,9 @@ static void spdlog_rotating_file_st(benchmark::State& state) {
 }
 
 static void spdlite_rotating_file_mt(benchmark::State& state) {
-    static auto& log = []() -> spdlite::logger<spdlite::rotating_file_sink>& {
+    static auto& log = []() -> spdlite::logger_mt<spdlite::rotating_file_sink>& {
         reset_rot_dir();
-        static spdlite::logger<spdlite::rotating_file_sink> l(
+        static spdlite::logger_mt<spdlite::rotating_file_sink> l(
             "bench", spdlite::rotating_file_sink{rot_dir() / "lite_mt.txt", rot_max_size, rot_max_files});
         return l;
     }();

@@ -20,7 +20,7 @@ Or via CMake (`find_package`, `FetchContent`, or `add_subdirectory`), link `spdl
 
 int main() {
     using namespace spdlite;
-    logger<console_sink> log("app", console_sink{});
+    logger_mt<console_sink> log("app", console_sink{});
 
     log.info("Hello {}", "world");
     log.info("Value: {}", 42);
@@ -41,24 +41,40 @@ See [`include/spdlite/logger.h`](include/spdlite/logger.h) for the full API and 
 
 ## Thread safety
 
-`logger` is thread-safe by default — it uses a `std::mutex` to serialize format and dispatch
+`logger_mt` is thread-safe - it uses a `std::mutex` to serialize format and dispatch
 per call, so multiple threads can write through the same instance safely.
 
 If you don't require thread safety, you can use `logger_st` which skips the lock entirely:
 
 ```c++
-spdlite::logger<console_sink>    logger("app", console_sink{});  // std::mutex
-spdlite::logger_st<console_sink> logger("app", console_sink{});  // no locking
+spdlite::logger_mt<console_sink> log("app", console_sink{});  // std::mutex
+spdlite::logger_st<console_sink> log("app", console_sink{});  // no locking
 ```
 
 Both share the same API; only the mutex type differs.
+
+## Passing loggers around
+
+Every logger derives from `spdlite::logger`, so code that receives one doesn't need to know
+its sinks or mutex type:
+
+```c++
+void connect(spdlite::logger& log);     // accepts any logger_mt / logger_st
+std::shared_ptr<spdlite::logger> log_;  // shared ownership
+
+spdlite::logger_mt<console_sink, file_sink> app("app", console_sink{}, file_sink{"app.txt"});
+connect(app);
+```
+
+Level filtering and the log overloads are non-virtual, so a disabled call through
+`spdlite::logger&` is still one inlined atomic load. An enabled call adds one virtual call.
 
 ## No-op logger
 
 A logger with no sinks defaults to `level::off`, so every call returns after one level check:
 
 ```c++
-spdlite::logger_st<> logger("app");  // discards everything, no formatting
+spdlite::logger_st<> log("app");  // discards everything, no formatting
 ```
 
 ## Formatter options
@@ -89,7 +105,7 @@ Strip log calls below a chosen severity from the binary entirely — via the `SP
 #define SPDLITE_ACTIVE_LEVEL SPDLITE_LEVEL_INFO  // before the include
 #include "spdlite/logger.h"
 
-void hot_path(spdlite::logger<spdlite::console_sink>& log) {
+void hot_path(spdlite::logger& log) {
     SPDLITE_DEBUG(log, "value={}", expensive_to_compute());  // gone — args not evaluated
     SPDLITE_INFO(log,  "did the thing");                     // stays
 }

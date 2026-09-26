@@ -20,7 +20,7 @@ TEST_CASE("logger: N threads x M messages all reach the sink, no torn lines") {
     constexpr int per_thread = 500;
 
     capture_sink cap;
-    logger<capture_sink> log{"mt", cap};
+    logger_mt<capture_sink> log{"mt", cap};
 
     std::vector<std::thread> threads;
     threads.reserve(n_threads);
@@ -52,7 +52,7 @@ TEST_CASE("logger: concurrent log + flush is safe") {
     constexpr int per_writer = 200;
 
     capture_sink cap;
-    logger<capture_sink> log{"mt", cap};
+    logger_mt<capture_sink> log{"mt", cap};
 
     std::atomic<bool> done{false};
     std::thread flusher([&] {

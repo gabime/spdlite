@@ -15,7 +15,7 @@ void rotating_file_sink_example();
 void multi_sink_example();
 void shared_file_sink_example();
 void compile_time_gating_example();
-void set_logger(spdlite::logger<spdlite::console_sink>* logger);
+void erased_logger_example();
 
 int main() {
     banner();
@@ -26,15 +26,16 @@ int main() {
     multi_sink_example();
     shared_file_sink_example();
     compile_time_gating_example();
+    erased_logger_example();
     return 0;
 }
 
 // Print an ASCII banner with the spdlite version through a colored console logger.
-// `logger` is the thread-safe default (uses std::mutex). Use `logger_st` instead if
+// `logger_mt` is the thread-safe default (uses std::mutex). Use `logger_st` instead if
 // the logger is provably single-threaded - it skips locking entirely.
 void banner() {
     using namespace spdlite;
-    logger<console_sink> console(console_sink{});
+    logger_mt<console_sink> console(console_sink{});
     console.info(R"(
                 ____ ___ __
    _________  ____/ / (.) /____
@@ -50,7 +51,7 @@ void banner() {
 // By default, the threshold is info; enable trace explicitly to see everything.
 void log_levels() {
     using namespace spdlite;
-    logger<console_sink> console(console_sink{});
+    logger_mt<console_sink> console(console_sink{});
     console.set_log_level(level::trace);
 
     console.trace("This is a {} message", "trace");
@@ -65,7 +66,7 @@ void log_levels() {
 // Default shape: [YYYY-MM-DD HH:MM:SS.mmm] [name] [LVL] payload
 void format_options_example() {
     using namespace spdlite;
-    logger<console_sink> log(console_sink{});
+    logger_mt<console_sink> log(console_sink{});
 
     log.set_format_options({.utc = true});
     log.set_format_options({.show_date = false});
@@ -79,7 +80,7 @@ void format_options_example() {
 // automatically and uses _wfopen on Windows for Unicode paths.
 void file_sink_example() {
     using namespace spdlite;
-    logger<file_sink> file_logger("my_logger", file_sink{"logs/example.txt", open_mode::truncate});
+    logger_mt<file_sink> file_logger("my_logger", file_sink{"logs/example.txt", open_mode::truncate});
     file_logger.info("This message is written to logs/example.txt");
 }
 
@@ -89,7 +90,7 @@ void rotating_file_sink_example() {
     using namespace spdlite;
     constexpr std::size_t max_size = 256;
     constexpr std::size_t max_files = 3;
-    logger<rotating_file_sink> rot(rotating_file_sink{"logs/rot.txt", max_size, max_files});
+    logger_mt<rotating_file_sink> rot(rotating_file_sink{"logs/rot.txt", max_size, max_files});
     for (int i = 0; i < 2000; ++i) {
         rot.info("rotating message #{:03}", i);
     }
@@ -98,7 +99,7 @@ void rotating_file_sink_example() {
 // Compose multiple sinks into one logger - a single log call writes to all of them.
 void multi_sink_example() {
     using namespace spdlite;
-    logger<console_sink, file_sink> multi(console_sink{}, file_sink{"logs/multi.txt", open_mode::truncate});
+    logger_mt<console_sink, file_sink> multi(console_sink{}, file_sink{"logs/multi.txt", open_mode::truncate});
     multi.info("This goes to both console and file");
 }
 
@@ -109,8 +110,8 @@ void shared_file_sink_example() {
     using namespace spdlite;
     auto file = std::make_shared<file_sink>("logs/shared.txt", open_mode::truncate);
     shared_sink wrapped(file);
-    logger<shared_sink<file_sink>> network("network", wrapped);
-    logger<shared_sink<file_sink>> auth("auth", wrapped);
+    logger_mt<shared_sink<file_sink>> network("network", wrapped);
+    logger_mt<shared_sink<file_sink>> auth("auth", wrapped);
 
     network.info("connection established");
     auth.warn("invalid token");
@@ -119,11 +120,24 @@ void shared_file_sink_example() {
 // Compile-time level gating. Build with -DSPDLITE_ACTIVE_LEVEL=SPDLITE_LEVEL_INFO
 // to strip the SPDLITE_DEBUG call entirely (no format string, no arg eval).
 // `logger_st` here demonstrates the single-threaded opt-out: identical API to
-// `logger`, but no mutex - use it only when you can prove the logger is never
+// `logger_mt`, but no mutex - use it only when you can prove the logger is never
 // shared across threads.
 void compile_time_gating_example() {
     using namespace spdlite;
     logger_st<console_sink> console(console_sink{});
     SPDLITE_DEBUG(console, "debug message — visible at LEVEL_TRACE/DEBUG, elided at LEVEL_INFO+");
-    SPDLITE_INFO(console, "info message — always compiled in unless built at LEVEL_WARN or higher");
+    SPDLITE_INFO(console, "info message - always compiled in unless built at LEVEL_WARN or higher");
 }
+
+// Pass loggers around as spdlite::logger& or std::shared_ptr<spdlite::logger>.
+// The consumer doesn't know the sinks or the mutex type.
+void consume(spdlite::logger& log) { log.info("consuming from {}", "some consumer"); }
+void erased_logger_example() {
+    using namespace spdlite;
+    logger_mt<console_sink, file_sink> app("app", console_sink{}, file_sink{"logs/app.txt", open_mode::truncate});
+    consume(app);
+
+    std::shared_ptr<logger> shared = std::make_shared<logger_st<console_sink>>("shared", console_sink{});
+    consume(*shared);
+}
+

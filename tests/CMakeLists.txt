@@ -19,6 +19,7 @@ add_executable(spdlite_tests
     test_level.cpp
     test_formatter.cpp
     test_logger.cpp
+    test_logger_erased.cpp
     test_file_sink.cpp
     test_rotating_file_sink.cpp
     test_null_sink.cpp
