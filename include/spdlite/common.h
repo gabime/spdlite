@@ -7,7 +7,7 @@
 // can include just this file rather than the whole logger template.
 
 #define SPDLITE_VER_MAJOR 0
-#define SPDLITE_VER_MINOR 1
+#define SPDLITE_VER_MINOR 2
 #define SPDLITE_VER_PATCH 0
 
 #include <array>
