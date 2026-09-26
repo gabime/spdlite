@@ -47,7 +47,7 @@ per call, so multiple threads can write through the same instance safely.
 If you don't require thread safety, you can use `logger_st` which skips the lock entirely:
 
 ```c++
-spdlite::logger<console_sink>    loogger("app", console_sink{});  // std::mutex
+spdlite::logger<console_sink>    logger("app", console_sink{});  // std::mutex
 spdlite::logger_st<console_sink> logger("app", console_sink{});  // no locking
 ```
 
@@ -83,8 +83,7 @@ See the table below for all available fields:
 
 ## Compile-time level gating
 
-Strip log calls below a chosen severity from the binary entirely — no format string,
-no argument evaluation, no symbol — via the `SPDLITE_*` macros:
+Strip log calls below a chosen severity from the binary entirely — via the `SPDLITE_*` macros:
 
 ```c++
 #define SPDLITE_ACTIVE_LEVEL SPDLITE_LEVEL_INFO  // before the include
