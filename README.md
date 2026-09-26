@@ -53,6 +53,14 @@ spdlite::logger_st<console_sink> logger("app", console_sink{});  // no locking
 
 Both share the same API; only the mutex type differs.
 
+## No-op logger
+
+A logger with no sinks defaults to `level::off`, so every call returns after one level check:
+
+```c++
+spdlite::logger_st<> logger("app");  // discards everything, no formatting
+```
+
 ## Formatter options
 
 The default header is `[YYYY-MM-DD HH:MM:SS.mmm] [name] [LVL] payload`. Reconfigure

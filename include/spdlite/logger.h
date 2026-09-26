@@ -129,8 +129,8 @@ public:
 
 private:
     std::string name_;
-    detail::atomic_level_t level_{level::info};
-    detail::atomic_level_t flush_level_{level::off};  // off => never auto-flush
+    detail::atomic_level_t level_{sizeof...(Sinks) == 0 ? level::off : level::info};  // sinkless => no-op
+    detail::atomic_level_t flush_level_{level::off};                                  // off => never auto-flush
     mutable Mutex mutex_;
     mutable formatter formatter_;
     mutable memory_buf_t buf_;

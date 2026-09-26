@@ -33,6 +33,17 @@ TEST_CASE("sinks-only ctor produces an empty name and no name bracket in the hea
     CHECK(contains(cap.state->formatted[0], "[INF] hello"));
 }
 
+TEST_CASE("sinkless logger defaults to level off") {
+    logger_st<> unnamed;
+    logger<> named{"noop"};
+    CHECK(unnamed.get_log_level() == level::off);
+    CHECK(named.get_log_level() == level::off);
+    CHECK(named.get_name() == "noop");
+    CHECK_FALSE(named.should_log(level::critical));
+    named.info("dropped {}", 1);
+    named.flush();
+}
+
 TEST_CASE("log_level get/set round trips") {
     logger_st<null_sink> log{"x", null_sink{}};
     CHECK(log.get_log_level() == level::info);  // default
@@ -162,7 +173,7 @@ TEST_CASE("logger never throws to caller when a sink throws on write") {
     CHECK_NOTHROW(log.error("e"));
     CHECK_NOTHROW(log.critical("c"));
     CHECK_NOTHROW(log.info("{} + {} = {}", 1, 2, 3));  // fmt path
-    CHECK_NOTHROW(log.info(std::string_view{"raw"}));     // string_view path
+    CHECK_NOTHROW(log.info(std::string_view{"raw"}));  // string_view path
     CHECK_NOTHROW(log.log(level::info, "via log()"));  // generic log()
     CHECK(cap.state->payloads.empty());                // nothing reached the sink
 
