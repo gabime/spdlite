@@ -19,8 +19,7 @@ Or via CMake (`find_package`, `FetchContent`, or `add_subdirectory`), link `spdl
 #include "spdlite/sinks/console_sink.h"
 
 int main() {
-    using namespace spdlite;
-    logger_mt<console_sink> log;
+    spdlite::logger_mt<console_sink> log;
 
     log.info("Hello {}", "world");
     log.info("Value: {}", 42);
