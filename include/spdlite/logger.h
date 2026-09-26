@@ -30,7 +30,7 @@ concept log_sink = requires(T & s, const log_msg& m) {
 
 // spdlite logger. Holds the name and log level, filters messages by level and provides the logging API.
 // Usage:
-//     spdlite::logger_mt<spdlite::console_sink> log("app", spdlite::console_sink{});
+//     spdlite::logger_mt<spdlite::console_sink> log("app");
 //     log.info("connected to {} in {} ms", host, elapsed_ms);
 class logger {
 public:
@@ -134,7 +134,7 @@ private:
 template <typename Mutex, typename... Sinks>
 class logger_impl final : public logger {
 public:
-    explicit logger_impl(std::string name, Sinks... sinks)
+    explicit logger_impl(std::string name, Sinks... sinks) requires(sizeof...(Sinks) > 0)
         : logger(std::move(name), default_level),
           formatter_(name_),
           sinks_(std::move(sinks)...) {}
@@ -144,8 +144,10 @@ public:
           formatter_(name_),
           sinks_(std::move(sinks)...) {}
 
-    logger_impl() requires(std::is_default_constructible_v<Sinks>&&...)
-        : logger({}, default_level) {}
+    // Default-constructs the sinks: logger_mt<console_sink> log("app");
+    explicit logger_impl(std::string name = {}) requires(std::is_default_constructible_v<Sinks>&&...)
+        : logger(std::move(name), default_level),
+          formatter_(name_) {}
 
     logger_impl(logger_impl&& other) noexcept
         : logger(std::move(other)),

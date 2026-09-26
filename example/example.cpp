@@ -35,7 +35,7 @@ int main() {
 // the logger is provably single-threaded - it skips locking entirely.
 void banner() {
     using namespace spdlite;
-    logger_mt<console_sink> console(console_sink{});
+    logger_mt<console_sink> console;
     console.info(R"(
                 ____ ___ __
    _________  ____/ / (.) /____
@@ -51,7 +51,7 @@ void banner() {
 // By default, the threshold is info; enable trace explicitly to see everything.
 void log_levels() {
     using namespace spdlite;
-    logger_mt<console_sink> console(console_sink{});
+    logger_mt<console_sink> console;
     console.set_log_level(level::trace);
 
     console.trace("This is a {} message", "trace");
@@ -66,7 +66,7 @@ void log_levels() {
 // Default shape: [YYYY-MM-DD HH:MM:SS.mmm] [name] [LVL] payload
 void format_options_example() {
     using namespace spdlite;
-    logger_mt<console_sink> log(console_sink{});
+    logger_mt<console_sink> log;
 
     log.set_format_options({.utc = true});
     log.set_format_options({.show_date = false});
@@ -124,7 +124,7 @@ void shared_file_sink_example() {
 // shared across threads.
 void compile_time_gating_example() {
     using namespace spdlite;
-    logger_st<console_sink> console(console_sink{});
+    logger_st<console_sink> console;
     SPDLITE_DEBUG(console, "debug message — visible at LEVEL_TRACE/DEBUG, elided at LEVEL_INFO+");
     SPDLITE_INFO(console, "info message - always compiled in unless built at LEVEL_WARN or higher");
 }
@@ -137,7 +137,7 @@ void erased_logger_example() {
     logger_mt<console_sink, file_sink> app("app", console_sink{}, file_sink{"logs/app.txt", open_mode::truncate});
     consume(app);
 
-    std::shared_ptr<logger> shared = std::make_shared<logger_st<console_sink>>("shared", console_sink{});
+    std::shared_ptr<logger> shared = std::make_shared<logger_st<console_sink>>("shared");
     consume(*shared);
 }
 

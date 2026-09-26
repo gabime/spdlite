@@ -20,7 +20,7 @@ Or via CMake (`find_package`, `FetchContent`, or `add_subdirectory`), link `spdl
 
 int main() {
     using namespace spdlite;
-    logger_mt<console_sink> log("app", console_sink{});
+    logger_mt<console_sink> log("app");
 
     log.info("Hello {}", "world");
     log.info("Value: {}", 42);
@@ -47,8 +47,8 @@ per call, so multiple threads can write through the same instance safely.
 If you don't require thread safety, you can use `logger_st` which skips the lock entirely:
 
 ```c++
-spdlite::logger_mt<console_sink> log("app", console_sink{});  // std::mutex
-spdlite::logger_st<console_sink> log("app", console_sink{});  // no locking
+spdlite::logger_mt<console_sink> log("app");  // std::mutex
+spdlite::logger_st<console_sink> log("app");  // no locking
 ```
 
 Both share the same API; only the mutex type differs.

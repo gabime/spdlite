@@ -2,10 +2,14 @@
 
 #include <doctest/doctest.h>
 
+#include <memory>
 #include <string>
+#include <type_traits>
+#include <vector>
 
 #include "helpers.h"
 #include "spdlite/logger.h"
+#include "spdlite/sinks/file_sink.h"
 #include "spdlite/sinks/null_sink.h"
 
 using namespace spdlite;
@@ -31,6 +35,107 @@ TEST_CASE("sinks-only ctor produces an empty name and no name bracket in the hea
     REQUIRE(cap.state->formatted.size() == 1);
     // header shape with no name: "[ts] [INF] hello\n" - level tag butts up against payload
     CHECK(contains(cap.state->formatted[0], "[INF] hello"));
+}
+
+namespace {
+
+// default-constructible sinks; state is static because the logger constructs its own instances
+struct default_sink {
+    static inline std::vector<std::string> lines;
+    void write(const log_msg& msg) { lines.emplace_back(msg.formatted); }
+    void flush() {}
+};
+
+struct other_default_sink {
+    static inline std::vector<std::string> lines;
+    void write(const log_msg& msg) { lines.emplace_back(msg.formatted); }
+    void flush() {}
+};
+
+struct needs_arg_sink {
+    explicit needs_arg_sink(int) {}
+    void write(const log_msg&) {}
+    void flush() {}
+};
+
+}  // namespace
+
+// every ctor form resolves to exactly one ctor, also when the sinks are default-constructible
+static_assert(std::is_constructible_v<logger_st<default_sink>>);
+static_assert(std::is_constructible_v<logger_st<default_sink>, std::string>);
+static_assert(std::is_constructible_v<logger_st<default_sink>, default_sink>);
+static_assert(std::is_constructible_v<logger_st<default_sink>, std::string, default_sink>);
+static_assert(std::is_constructible_v<logger_st<>>);
+static_assert(std::is_constructible_v<logger_st<>, std::string>);
+
+// sinks without a default ctor must be passed explicitly, also when mixed with default-constructible ones
+static_assert(!std::is_constructible_v<logger_st<needs_arg_sink>>);
+static_assert(!std::is_constructible_v<logger_st<needs_arg_sink>, std::string>);
+static_assert(std::is_constructible_v<logger_st<needs_arg_sink>, std::string, needs_arg_sink>);
+static_assert(!std::is_constructible_v<logger_st<default_sink, needs_arg_sink>, std::string>);
+static_assert(std::is_constructible_v<logger_st<default_sink, needs_arg_sink>, std::string, default_sink, needs_arg_sink>);
+
+// explicit: a name never converts implicitly to a logger
+static_assert(!std::is_convertible_v<std::string, logger_st<default_sink>>);
+static_assert(!std::is_convertible_v<std::string, logger_st<>>);
+
+// bundled sinks
+static_assert(std::is_constructible_v<logger_mt<null_sink>, std::string>);
+static_assert(!std::is_constructible_v<logger_mt<file_sink>, std::string>);
+
+TEST_CASE("name-only ctor default-constructs the sinks") {
+    default_sink::lines.clear();
+    logger_st<default_sink> log{"app"};
+
+    CHECK(log.get_name() == "app");
+    CHECK(log.get_log_level() == level::info);
+    log.info("hello {}", 1);
+    REQUIRE(default_sink::lines.size() == 1);
+    CHECK(contains(default_sink::lines[0], "[app] [INF] hello 1"));
+}
+
+TEST_CASE("default ctor default-constructs the sinks with an empty name") {
+    default_sink::lines.clear();
+    logger_st<default_sink> log;
+
+    CHECK(log.get_name().empty());
+    log.warn("w");
+    REQUIRE(default_sink::lines.size() == 1);
+    CHECK(contains(default_sink::lines[0], "[WRN] w"));
+}
+
+TEST_CASE("name-only ctor default-constructs every sink of a multi-sink logger") {
+    default_sink::lines.clear();
+    other_default_sink::lines.clear();
+    logger_st<default_sink, other_default_sink> log{"multi"};
+
+    log.error("boom");
+    REQUIRE(default_sink::lines.size() == 1);
+    REQUIRE(other_default_sink::lines.size() == 1);
+    CHECK(contains(default_sink::lines[0], "[multi] [ERR] boom"));
+    CHECK(default_sink::lines[0] == other_default_sink::lines[0]);
+}
+
+TEST_CASE("name-only ctor works with make_shared behind shared_ptr<logger>") {
+    default_sink::lines.clear();
+    std::shared_ptr<logger> log = std::make_shared<logger_mt<default_sink>>("shared");
+
+    log->info("via {}", "shared_ptr");
+    REQUIRE(default_sink::lines.size() == 1);
+    CHECK(contains(default_sink::lines[0], "[shared] [INF] via shared_ptr"));
+}
+
+TEST_CASE("an explicitly passed sink is used even when the sink is default-constructible") {
+    static_assert(std::is_default_constructible_v<capture_sink>);
+    capture_sink cap;
+    logger_st<capture_sink> named{"app", cap};
+    logger_st<capture_sink> unnamed{cap};
+
+    named.info("a");
+    unnamed.info("b");
+    REQUIRE(cap.state->payloads.size() == 2);
+    CHECK(cap.state->payloads[0] == "a");
+    CHECK(cap.state->payloads[1] == "b");
 }
 
 TEST_CASE("sinkless logger defaults to level off") {
