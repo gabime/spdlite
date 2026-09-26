@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// LEVEL_OFF: all six macros elide — zero arg evaluation, nothing reaches the sink.
+// LEVEL_OFF: all six macros elide - zero arg evaluation, nothing reaches the sink.
 #define SPDLITE_ACTIVE_LEVEL SPDLITE_LEVEL_OFF  // lazily expanded inside logger.h
 
 #include <doctest/doctest.h>

@@ -19,7 +19,7 @@ TEST_CASE("at LEVEL_WARN, trace/debug/info elide; warn/error/critical emit") {
     };
     capture_sink cap;
     logger_st<capture_sink> log{cap};
-    log.set_log_level(level::trace);  // runtime gate wide open — only the compile-time gate filters
+    log.set_log_level(level::trace);  // runtime gate wide open - only the compile-time gate filters
 
     SPDLITE_TRACE(log, "x={}", bumper());     // elided
     SPDLITE_DEBUG(log, "x={}", bumper());     // elided

@@ -102,7 +102,7 @@ public:
 
     virtual void set_name(std::string_view new_name) = 0;
 
-    // Reconfigure the cached header (UTC, show_date, show_millis). Cheap - one ctor call.
+    // Reconfigure the cached header (utc, show_date, show_thread_id, precision). Cheap - one ctor call.
     virtual void set_format_options(format_options opts) = 0;
 
     virtual void flush() const noexcept = 0;

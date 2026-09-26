@@ -4,7 +4,7 @@
 
 **Goal:** Add preprocessor macros (`SPDLITE_TRACE`/`DEBUG`/`INFO`/`WARN`/`ERROR`/`CRITICAL`) to spdlite that compile down to either the real method call or `(void)0` based on `SPDLITE_ACTIVE_LEVEL`, with three test TUs proving full coverage, mid-spectrum boundary correctness, and full elision.
 
-**Architecture:** Macros are appended to the bottom of `include/spdlite/logger.h` after the closing `}  // namespace spdlite`. The level constants (`SPDLITE_LEVEL_TRACE` ... `SPDLITE_LEVEL_OFF`) are numbered 0..6 to match `enum class level`. Default is `SPDLITE_LEVEL_TRACE` (no elision). Each test TU sets `SPDLITE_ACTIVE_LEVEL` before `#include`-ing `logger.h` and verifies elision behavior using a counter-bumping lambda as a format arg — the lambda's call count proves whether the macro's args were evaluated.
+**Architecture:** Macros are appended to the bottom of `include/spdlite/logger.h` after the closing `}  // namespace spdlite`. The level constants (`SPDLITE_LEVEL_TRACE` ... `SPDLITE_LEVEL_OFF`) are numbered 0..6 to match `enum class level`. Default is `SPDLITE_LEVEL_TRACE` (no elision). Each test TU sets `SPDLITE_ACTIVE_LEVEL` before `#include`-ing `logger.h` and verifies elision behavior using a counter-bumping lambda as a format arg - the lambda's call count proves whether the macro's args were evaluated.
 
 **Tech Stack:** C++20 header-only library. doctest 2.5.2 test framework (already vendored via FetchContent in `tests/CMakeLists.txt`). CMake build with `-DSPDLITE_BUILD_TESTS=ON`.
 
@@ -14,7 +14,7 @@
 
 ## Task 1: Add macros + WARN boundary test
 
-This is the load-bearing task. The WARN test is the *correctness witness* for the elision behavior — if macros are off-by-one (`<=` vs `<`), the all-elide or all-emit tests in later tasks won't catch it, but the WARN boundary will.
+This is the load-bearing task. The WARN test is the *correctness witness* for the elision behavior - if macros are off-by-one (`<=` vs `<`), the all-elide or all-emit tests in later tasks won't catch it, but the WARN boundary will.
 
 **Files:**
 - Create: `tests/test_log_macros_warn.cpp`
@@ -49,7 +49,7 @@ TEST_CASE("at LEVEL_WARN, trace/debug/info elide; warn/error/critical emit") {
     };
     capture_sink cap;
     logger_st<capture_sink> log{cap};
-    log.set_log_level(level::trace);  // runtime gate wide open — only the compile-time gate filters
+    log.set_log_level(level::trace);  // runtime gate wide open - only the compile-time gate filters
 
     SPDLITE_TRACE(log, "x={}", bumper());     // elided
     SPDLITE_DEBUG(log, "x={}", bumper());     // elided
@@ -103,7 +103,7 @@ Modify `include/spdlite/logger.h`. After the closing `}  // namespace spdlite` (
 // ===== Compile-time level gate =====
 // Numeric values match enum class level (trace=0 ... off=6) in common.h.
 // Set SPDLITE_ACTIVE_LEVEL before including this header to strip lower levels
-// at compile time. Default is SPDLITE_LEVEL_TRACE — no elision.
+// at compile time. Default is SPDLITE_LEVEL_TRACE - no elision.
 
 #define SPDLITE_LEVEL_TRACE    0
 #define SPDLITE_LEVEL_DEBUG    1
@@ -261,14 +261,14 @@ Expected: build succeeds, `100% tests passed`.
 ```bash
 clang-format -i tests/test_log_macros_trace.cpp
 git add tests/test_log_macros_trace.cpp tests/CMakeLists.txt
-git commit -m "test: LEVEL_TRACE coverage — all six log macros emit"
+git commit -m "test: LEVEL_TRACE coverage - all six log macros emit"
 ```
 
 ---
 
 ## Task 3: Add the OFF full-elision test
 
-Proves the macros elide *every* level — counter remains at 0, sink receives nothing.
+Proves the macros elide *every* level - counter remains at 0, sink receives nothing.
 
 **Files:**
 - Create: `tests/test_log_macros_off.cpp`
@@ -281,7 +281,7 @@ Create `tests/test_log_macros_off.cpp`:
 ```cpp
 // SPDX-License-Identifier: MIT
 
-// At LEVEL_OFF, all six macros must elide entirely — zero arg evaluation,
+// At LEVEL_OFF, all six macros must elide entirely - zero arg evaluation,
 // zero messages reaching the sink.
 
 #define SPDLITE_ACTIVE_LEVEL SPDLITE_LEVEL_OFF
@@ -349,7 +349,7 @@ Expected: build succeeds, all three macro-test TUs pass.
 ```bash
 clang-format -i tests/test_log_macros_off.cpp
 git add tests/test_log_macros_off.cpp tests/CMakeLists.txt
-git commit -m "test: LEVEL_OFF coverage — all six log macros elide"
+git commit -m "test: LEVEL_OFF coverage - all six log macros elide"
 ```
 
 ---
@@ -399,8 +399,8 @@ Append the implementation at the bottom of `example/example.cpp`, after `shared_
 void compile_time_gating_example() {
     using namespace spdlite;
     logger_st console(console_sink{});
-    SPDLITE_DEBUG(console, "debug message — visible at LEVEL_TRACE/DEBUG, elided at LEVEL_INFO+");
-    SPDLITE_INFO(console, "info message — always compiled in unless built at LEVEL_WARN or higher");
+    SPDLITE_DEBUG(console, "debug message - visible at LEVEL_TRACE/DEBUG, elided at LEVEL_INFO+");
+    SPDLITE_INFO(console, "info message - always compiled in unless built at LEVEL_WARN or higher");
 }
 ```
 
@@ -453,7 +453,7 @@ no argument evaluation, no symbol), use the `SPDLITE_*` macros:
 #include "spdlite/logger.h"
 
 void hot_path(spdlite::logger_st<spdlite::console_sink>& log) {
-    SPDLITE_DEBUG(log, "value={}", expensive_to_compute());  // gone — args not evaluated
+    SPDLITE_DEBUG(log, "value={}", expensive_to_compute());  // gone - args not evaluated
     SPDLITE_INFO(log,  "did the thing");                     // stays
 }
 ```
@@ -468,7 +468,7 @@ Three rules:
 1. `SPDLITE_ACTIVE_LEVEL` is a **per-translation-unit** setting. Set it *before* the first
    `#include "spdlite/logger.h"` in that TU (or pass `-DSPDLITE_ACTIVE_LEVEL=...` to the
    compiler for project-wide setting).
-2. The default is `SPDLITE_LEVEL_TRACE` — every call survives. You opt in to elision.
+2. The default is `SPDLITE_LEVEL_TRACE` - every call survives. You opt in to elision.
 3. The compile-time gate is independent of the runtime `set_log_level()` gate. A call is
    emitted only if both gates pass: the macro must survive *and* `should_log()` must return
    true at runtime.

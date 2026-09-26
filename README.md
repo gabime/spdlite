@@ -10,7 +10,7 @@ Use spdlite if you want a tiny, fast, capable logger.
 
 ## Install
 
-Copy the `include/spdlite/` folder into your build tree — header-only, no build step.
+Copy the `include/spdlite/` folder into your build tree - header-only, no build step.
 Or via CMake (`find_package`, `FetchContent`, or `add_subdirectory`), link `spdlite::spdlite`.
 
 ## Quick start
@@ -47,8 +47,8 @@ per call, so multiple threads can write through the same instance safely.
 If you don't require thread safety, you can use `logger_st` which skips the lock entirely:
 
 ```c++
-spdlite::logger_mt<console_sink> log("app");  // std::mutex
-spdlite::logger_st<console_sink> log("app");  // no locking
+spdlite::logger_mt<console_sink> log("app");     // std::mutex
+spdlite::logger_st<console_sink> log_st("app");  // no locking
 ```
 
 Both share the same API; only the mutex type differs.
@@ -83,9 +83,9 @@ The default header is `[YYYY-MM-DD HH:MM:SS.mmm] [name] [LVL] payload`. Reconfig
 via `format_options`:
 
 ```c++
-log.format_options({.utc = true});
-log.format_options({.precision = time_precision::ns});
-log.format_options({.show_date = false, .precision = time_precision::none});
+log.set_format_options({.utc = true});
+log.set_format_options({.precision = time_precision::ns});
+log.set_format_options({.show_date = false, .precision = time_precision::none});
 ```
 
 See the table below for all available fields:
@@ -99,14 +99,14 @@ See the table below for all available fields:
 
 ## Compile-time level gating
 
-Strip log calls below a chosen severity from the binary entirely — via the `SPDLITE_*` macros:
+Strip log calls below a chosen severity from the binary entirely - via the `SPDLITE_*` macros:
 
 ```c++
 #define SPDLITE_ACTIVE_LEVEL SPDLITE_LEVEL_INFO  // before the include
 #include "spdlite/logger.h"
 
 void hot_path(spdlite::logger& log) {
-    SPDLITE_DEBUG(log, "value={}", expensive_to_compute());  // gone — args not evaluated
+    SPDLITE_DEBUG(log, "value={}", expensive_to_compute());  // gone - args not evaluated
     SPDLITE_INFO(log,  "did the thing");                     // stays
 }
 ```
@@ -114,26 +114,26 @@ void hot_path(spdlite::logger& log) {
 Macros: `SPDLITE_TRACE`, `SPDLITE_DEBUG`, `SPDLITE_INFO`, `SPDLITE_WARN`, `SPDLITE_ERROR`,
 `SPDLITE_CRITICAL`. Levels: `SPDLITE_LEVEL_TRACE` (0) ... `SPDLITE_LEVEL_OFF` (6). Per-TU
 setting; default is `SPDLITE_LEVEL_TRACE` (no elision). The compile-time gate is independent
-of the runtime `set_log_level()` — a call emits only when both gates pass.
+of the runtime `set_log_level()` - a call emits only when both gates pass.
 
 ## Compile times
 
 Most of a logging TU's compile cost is the bundled fmt headers. To cut it:
 
-- **Gate out cold log calls** — see *Compile-time level gating* above; elided calls cost nothing,
+- **Gate out cold log calls** - see *Compile-time level gating* above; elided calls cost nothing,
   at compile time and runtime.
-- **Compile fmt once** — `-DSPDLITE_COMPILED_FMT=ON` builds fmt's implementation into a small
+- **Compile fmt once** - `-DSPDLITE_COMPILED_FMT=ON` builds fmt's implementation into a small
   static lib instead of header-only, so logging TUs compile much faster (~60% per TU) with **no**
   runtime cost and identical output. Worth it from ~2 logging TUs up; gives up pure header-only
-  (consumers link the lib — automatic via `spdlite::spdlite`).
-- **Use `std::format`** — `-DSPDLITE_USE_STD_FORMAT=ON` drops the bundled fmt headers and compiles
+  (consumers link the lib - automatic via `spdlite::spdlite`).
+- **Use `std::format`** - `-DSPDLITE_USE_STD_FORMAT=ON` drops the bundled fmt headers and compiles
   ~20% faster per TU, but it is a compile-time-for-runtime trade: libstdc++'s `std::format` is
-  ~1.3–2× slower than bundled fmt on typical messages, so fmt stays the default. Needs a modern
+  ~1.3-2× slower than bundled fmt on typical messages, so fmt stays the default. Needs a modern
   stdlib (libstdc++ 13+, libc++ 17+, MSVC 19.29+).
 
 ## Build options
 
-CMake isn't required to *use* spdlite — copy the headers and you're done. The flags below
+CMake isn't required to *use* spdlite - copy the headers and you're done. The flags below
 only apply if you build the bundled example, tests, or benchmarks with the provided
 `CMakeLists.txt`.
 
@@ -142,8 +142,8 @@ only apply if you build the bundled example, tests, or benchmarks with the provi
 | `SPDLITE_BUILD_EXAMPLE`  | `ON`    | Build the example executable.                                          |
 | `SPDLITE_BUILD_TESTS`    | `OFF`   | Build the doctest-based unit tests.                                    |
 | `SPDLITE_BUILD_BENCH`    | `OFF`   | Build the benchmarks (fetches Google Benchmark automatically).         |
-| `SPDLITE_USE_STD_FORMAT` | `OFF`   | CMake option: use `<format>` instead of bundled fmt — drop `fmt/` from the install. Pass via `-DSPDLITE_USE_STD_FORMAT=ON`. |
-| `SPDLITE_COMPILED_FMT`   | `OFF`   | Compile bundled fmt once into a static lib (not header-only) — faster builds, links `spdlite_fmt`. Mutually exclusive with `SPDLITE_USE_STD_FORMAT`. |
+| `SPDLITE_USE_STD_FORMAT` | `OFF`   | CMake option: use `<format>` instead of bundled fmt - drop `fmt/` from the install. Pass via `-DSPDLITE_USE_STD_FORMAT=ON`. |
+| `SPDLITE_COMPILED_FMT`   | `OFF`   | Compile bundled fmt once into a static lib (not header-only) - faster builds, links `spdlite_fmt`. Mutually exclusive with `SPDLITE_USE_STD_FORMAT`. |
 
 ## Benchmarks
 

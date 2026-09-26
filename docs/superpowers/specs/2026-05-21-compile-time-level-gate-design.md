@@ -90,7 +90,7 @@ No new header. The macros are appended to the existing `logger.h` after the `nam
 #endif
 ```
 
-A user who wants a non-default level must set the macro *before* the first `#include` of `logger.h` in that TU — see the [Per-TU configurability](#per-tu-configurability) section below.
+A user who wants a non-default level must set the macro *before* the first `#include` of `logger.h` in that TU - see the [Per-TU configurability](#per-tu-configurability) section below.
 
 ### Design choices baked in (decided during brainstorming)
 
@@ -113,9 +113,9 @@ This means the compile-time gate is a strict subset of what the runtime gate can
 
 ### Macro hygiene
 
-- `(log).method(...)` — the logger expression is parenthesized so complex expressions like `SPDLITE_TRACE(get_logger("x"), "fmt", arg)` work safely.
-- `(void)0` for the no-op — standard idiom; safe inside `if (cond) SPDLITE_TRACE(...);` without dangling-else issues.
-- `__VA_ARGS__` only — no `__VA_OPT__` needed because the macros always require at least one argument (the format string).
+- `(log).method(...)` - the logger expression is parenthesized so complex expressions like `SPDLITE_TRACE(get_logger("x"), "fmt", arg)` work safely.
+- `(void)0` for the no-op - standard idiom; safe inside `if (cond) SPDLITE_TRACE(...);` without dangling-else issues.
+- `__VA_ARGS__` only - no `__VA_OPT__` needed because the macros always require at least one argument (the format string).
 
 ### Per-TU configurability
 
@@ -132,7 +132,7 @@ and that TU's call sites are gated independently of other TUs. There is no ODR c
 
 Three test translation units, all linked into the existing `spdlite_tests` binary (no new CMake target). Each TU sets `SPDLITE_ACTIVE_LEVEL` before including `logger.h`, then verifies elision behavior.
 
-### `tests/test_log_macros_trace.cpp` — full coverage
+### `tests/test_log_macros_trace.cpp` - full coverage
 
 ```cpp
 #define SPDLITE_ACTIVE_LEVEL SPDLITE_LEVEL_TRACE
@@ -157,7 +157,7 @@ TEST_CASE("at LEVEL_TRACE, all six macros emit and evaluate their args") {
 }
 ```
 
-### `tests/test_log_macros_warn.cpp` — boundary case
+### `tests/test_log_macros_warn.cpp` - boundary case
 
 ```cpp
 #define SPDLITE_ACTIVE_LEVEL SPDLITE_LEVEL_WARN
@@ -180,7 +180,7 @@ TEST_CASE("at LEVEL_WARN, trace/debug/info elide; warn/error/critical emit") {
 }
 ```
 
-### `tests/test_log_macros_off.cpp` — full elision
+### `tests/test_log_macros_off.cpp` - full elision
 
 ```cpp
 #define SPDLITE_ACTIVE_LEVEL SPDLITE_LEVEL_OFF
@@ -231,7 +231,7 @@ void hot_path(spdlite::logger_st<...>& log) {
 Document the three rules:
 1. `SPDLITE_ACTIVE_LEVEL` is a per-TU setting. Set it before `#include "spdlite/logger.h"`.
 2. Default is `SPDLITE_LEVEL_TRACE` (no elision).
-3. Elision means the macro expands to `(void)0` — the format string and all argument expressions disappear.
+3. Elision means the macro expands to `(void)0` - the format string and all argument expressions disappear.
 
 ### Example
 

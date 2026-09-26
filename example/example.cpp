@@ -125,7 +125,7 @@ void shared_file_sink_example() {
 void compile_time_gating_example() {
     using namespace spdlite;
     logger_st<console_sink> console;
-    SPDLITE_DEBUG(console, "debug message — visible at LEVEL_TRACE/DEBUG, elided at LEVEL_INFO+");
+    SPDLITE_DEBUG(console, "debug message - visible at LEVEL_TRACE/DEBUG, elided at LEVEL_INFO+");
     SPDLITE_INFO(console, "info message - always compiled in unless built at LEVEL_WARN or higher");
 }
 

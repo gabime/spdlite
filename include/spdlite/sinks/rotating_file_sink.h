@@ -217,7 +217,7 @@ inline std::optional<std::size_t> rotating_file_sink::parse_archive_index_(const
     const auto& inner = base_ext.empty() ? filepath : filepath.stem();
     if (inner.stem() != base_stem) return std::nullopt;
     const auto& dot_digits = inner.extension();        // prvalue path, lifetime-extended
-    const auto& dot_digits_str = dot_digits.native();  // const string_type& — no allocation
+    const auto& dot_digits_str = dot_digits.native();  // const string_type& - no allocation
     if (dot_digits_str.size() < 2 || dot_digits_str[0] != '.') return std::nullopt;
 
     std::size_t value = 0;
