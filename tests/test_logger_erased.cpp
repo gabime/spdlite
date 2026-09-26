@@ -46,9 +46,11 @@ struct dtor_sink {
 
 TEST_CASE("mt, st and sinkless loggers all pass as logger&") {
     capture_sink a, b;
-    logger_mt<capture_sink> mt{"mt", a};
-    logger_st<capture_sink> st{"st", b};
-    logger_st<> noop{"noop"};
+    logger_mt<capture_sink> mt{a};
+    logger_st<capture_sink> st{b};
+    logger_st<> noop;
+    mt.set_tag("mt");
+    st.set_tag("st");
     consume(mt);
     consume(st);
     consume(noop);
@@ -63,7 +65,7 @@ TEST_CASE("mt, st and sinkless loggers all pass as logger&") {
 
 TEST_CASE("level filtering through logger& uses the concrete logger's level") {
     capture_sink cap;
-    logger_st<capture_sink> st{"x", cap};
+    logger_st<capture_sink> st{cap};
     logger& log = st;
 
     log.set_log_level(level::warn);
@@ -76,9 +78,9 @@ TEST_CASE("level filtering through logger& uses the concrete logger's level") {
     CHECK(cap.state->payloads[0] == "kept");
 }
 
-TEST_CASE("flush, set_name and set_format_options through logger& reach the concrete logger") {
+TEST_CASE("flush, set_tag and set_format_options through logger& reach the concrete logger") {
     capture_sink cap;
-    logger_st<capture_sink> st{"old", cap};
+    logger_st<capture_sink> st{cap};
     logger& log = st;
 
     log.flush();
@@ -87,8 +89,8 @@ TEST_CASE("flush, set_name and set_format_options through logger& reach the conc
     log.error("e");
     CHECK(cap.state->flush_count == 2);
 
-    log.set_name("new");
-    CHECK(st.get_name() == "new");
+    log.set_tag("new");
+    CHECK(st.get_tag() == "new");
     log.set_format_options({.show_date = false, .precision = time_precision::none});
     log.info("x");
     REQUIRE(cap.state->formatted.size() == 2);
@@ -98,7 +100,7 @@ TEST_CASE("flush, set_name and set_format_options through logger& reach the conc
 
 TEST_CASE("shared_ptr<logger> shares one concrete logger") {
     capture_sink cap;
-    std::shared_ptr<logger> a = std::make_shared<logger_mt<capture_sink>>("shared", cap);
+    std::shared_ptr<logger> a = std::make_shared<logger_mt<capture_sink>>(cap);
     std::shared_ptr<logger> b = a;
     a->info("from a");
     b->info("from {}", "b");
@@ -108,9 +110,9 @@ TEST_CASE("shared_ptr<logger> shares one concrete logger") {
 
 TEST_CASE("shared_ptr<logger> can be re-pointed from a no-op logger to a real one") {
     capture_sink cap;
-    std::shared_ptr<logger> log = std::make_shared<logger_st<>>("app");
+    std::shared_ptr<logger> log = std::make_shared<logger_st<>>();
     log->critical("dropped");
-    log = std::make_shared<logger_st<capture_sink>>("app", cap);
+    log = std::make_shared<logger_st<capture_sink>>(cap);
     log->info("kept");
     REQUIRE(cap.state->payloads.size() == 1);
     CHECK(cap.state->payloads[0] == "kept");
@@ -118,20 +120,21 @@ TEST_CASE("shared_ptr<logger> can be re-pointed from a no-op logger to a real on
 
 TEST_CASE("unique_ptr<logger> destroys the concrete logger and its sinks") {
     auto destroyed = std::make_shared<bool>(false);
-    std::unique_ptr<logger> log = std::make_unique<logger_st<dtor_sink>>("x", dtor_sink{destroyed});
+    std::unique_ptr<logger> log = std::make_unique<logger_st<dtor_sink>>(dtor_sink{destroyed});
     CHECK_FALSE(*destroyed);
     log.reset();
     CHECK(*destroyed);
 }
 
-TEST_CASE("move ctor transfers name, levels and sinks; moved-from logger is silenced") {
+TEST_CASE("move ctor transfers tag, levels and sinks; moved-from logger is silenced") {
     capture_sink cap;
-    logger_st<capture_sink> src{"src", cap};
+    logger_st<capture_sink> src{cap};
+    src.set_tag("src");
     src.set_log_level(level::debug);
     src.set_flush_level(level::warn);
 
     logger_st<capture_sink> dst{std::move(src)};
-    CHECK(dst.get_name() == "src");
+    CHECK(dst.get_tag() == "src");
     CHECK(dst.get_log_level() == level::debug);
     CHECK(dst.get_flush_level() == level::warn);
     CHECK(src.get_log_level() == level::off);

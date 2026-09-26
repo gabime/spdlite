@@ -10,8 +10,8 @@
 
 // Platform thread-ID source for the optional [tid] header field.
 #if defined(__linux__)
-    #include <unistd.h>
     #include <sys/syscall.h>
+    #include <unistd.h>
 #elif defined(__APPLE__)
     #include <pthread.h>
 #elif defined(_WIN32)
@@ -90,16 +90,16 @@ struct format_options {
     time_precision precision = time_precision::ms;  // .mmm (default), .uuuuuu, .nnnnnnnnn, or none
 };
 
-// Default shape: [YYYY-MM-DD HH:MM:SS.mmm] [name] [LVL] payload\n
+// Default shape: [YYYY-MM-DD HH:MM:SS.mmm] [tag] [LVL] payload\n (no [tag] when the tag is empty)
 // Layout flexes with format_options - the cached header is rebuilt on options change,
 // so the hot path stays "patch a few bytes + memcpy" regardless of layout.
 struct formatter {
-    explicit formatter(std::string_view logger_name = {}, format_options opts = {})
+    explicit formatter(std::string_view tag = {}, format_options opts = {})
         : opts_(opts) {
-        rebuild_header(logger_name);
+        rebuild_header(tag);
     }
 
-    void set_logger_name(std::string_view name) { rebuild_header(name); }
+    void set_tag(std::string_view tag) { rebuild_header(tag); }
 
     // append the cached header to dest. Patches the fractional digits (if any) and
     // level per call; rebuilds the date/time digits only when the second changes.
@@ -161,7 +161,7 @@ private:
     std::size_t level_offset_{};
     std::chrono::seconds last_secs_{};
 
-    void rebuild_header(std::string_view logger_name) {
+    void rebuild_header(std::string_view tag) {
         header_.clear();
         header_ = opts_.show_date ? "[0000-00-00 00:00:00" : "[00:00:00";
         if (opts_.precision != time_precision::none) {
@@ -175,9 +175,9 @@ private:
             tid_offset_ = header_.size();
             header_.append("000000] ");  // 6-digit zero-padded thread id, patched per call
         }
-        if (!logger_name.empty()) {
+        if (!tag.empty()) {
             header_.push_back('[');
-            header_.append(logger_name);
+            header_.append(tag);
             header_.append("] ");
         }
         header_.push_back('[');

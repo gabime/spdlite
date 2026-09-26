@@ -63,7 +63,7 @@ void log_levels() {
 }
 
 // Reconfigure the header layout at runtime via format_options.
-// Default shape: [YYYY-MM-DD HH:MM:SS.mmm] [name] [LVL] payload
+// Default shape: [YYYY-MM-DD HH:MM:SS.mmm] [LVL] payload
 void format_options_example() {
     using namespace spdlite;
     logger_mt<console_sink> log;
@@ -80,7 +80,7 @@ void format_options_example() {
 // automatically and uses _wfopen on Windows for Unicode paths.
 void file_sink_example() {
     using namespace spdlite;
-    logger_mt<file_sink> file_logger("my_logger", file_sink{"logs/example.txt", open_mode::truncate});
+    logger_mt<file_sink> file_logger(file_sink{"logs/example.txt", open_mode::truncate});
     file_logger.info("This message is written to logs/example.txt");
 }
 
@@ -103,15 +103,17 @@ void multi_sink_example() {
     multi.info("This goes to both console and file");
 }
 
-// Multiple named loggers writing to one shared file via shared_sink.
-// Each line is tagged with the logger's name, so subsystems can be
+// Multiple tagged loggers writing to one shared file via shared_sink.
+// Each line carries its logger's tag, so subsystems can be
 // distinguished by grep on a single output file.
 void shared_file_sink_example() {
     using namespace spdlite;
     auto file = std::make_shared<file_sink>("logs/shared.txt", open_mode::truncate);
     shared_sink wrapped(file);
-    logger_mt<shared_sink<file_sink>> network("network", wrapped);
-    logger_mt<shared_sink<file_sink>> auth("auth", wrapped);
+    logger_mt<shared_sink<file_sink>> network(wrapped);
+    logger_mt<shared_sink<file_sink>> auth(wrapped);
+    network.set_tag("network");
+    auth.set_tag("auth");
 
     network.info("connection established");
     auth.warn("invalid token");
@@ -134,10 +136,11 @@ void compile_time_gating_example() {
 void consume(spdlite::logger& log) { log.info("consuming from {}", "some consumer"); }
 void erased_logger_example() {
     using namespace spdlite;
-    logger_mt<console_sink, file_sink> app("app", console_sink{}, file_sink{"logs/app.txt", open_mode::truncate});
+    logger_mt<console_sink, file_sink> app(console_sink{}, file_sink{"logs/app.txt", open_mode::truncate});
+    app.set_tag("app");
     consume(app);
 
-    std::shared_ptr<logger> shared = std::make_shared<logger_st<console_sink>>("shared");
+    std::shared_ptr<logger> shared = std::make_shared<logger_st<console_sink>>();
+    shared->set_tag("shared");
     consume(*shared);
 }
-

@@ -30,7 +30,7 @@ TEST_CASE("level_names map to expected 3-char tags") {
 }
 
 TEST_CASE("should_log filters by current log_level") {
-    spdlite::logger_st<spdlite::null_sink> log{"f", spdlite::null_sink{}};
+    spdlite::logger_st<spdlite::null_sink> log{spdlite::null_sink{}};
 
     log.set_log_level(level::warn);
     CHECK_FALSE(log.should_log(level::trace));
@@ -51,7 +51,7 @@ TEST_CASE("should_log filters by current log_level") {
 
 TEST_CASE("level filtering suppresses messages at the sink") {
     helpers::capture_sink cap;
-    spdlite::logger_st<helpers::capture_sink> log{"f", cap};
+    spdlite::logger_st<helpers::capture_sink> log{cap};
     log.set_log_level(level::warn);
 
     log.trace("nope");
@@ -69,7 +69,7 @@ TEST_CASE("level filtering suppresses messages at the sink") {
 }
 
 TEST_CASE("default log level is info") {
-    spdlite::logger_st<spdlite::null_sink> log{"f", spdlite::null_sink{}};
+    spdlite::logger_st<spdlite::null_sink> log{spdlite::null_sink{}};
     CHECK(log.get_log_level() == level::info);
     CHECK_FALSE(log.should_log(level::trace));
     CHECK_FALSE(log.should_log(level::debug));

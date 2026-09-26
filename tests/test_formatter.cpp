@@ -87,8 +87,8 @@ static std::string format_one(formatter& fmt, log_clock::time_point tp, level lv
     return std::string(buf.data(), buf.size());
 }
 
-TEST_CASE("format_header produces a fixed-shape header with logger name") {
-    formatter fmt{"myname"};
+TEST_CASE("format_header produces a fixed-shape header with a tag") {
+    formatter fmt{"mytag"};
     auto out = format_one(fmt, log_clock::now(), level::info);
 
     // Layout (byte offsets): the timestamp separators are fixed, then a space at 25.
@@ -103,12 +103,12 @@ TEST_CASE("format_header produces a fixed-shape header with logger name") {
     CHECK(out[20] == '.');
     CHECK(out[24] == ']');
     CHECK(out[25] == ' ');
-    CHECK(contains(out, "[myname]"));
+    CHECK(contains(out, "[mytag]"));
     CHECK(contains(out, "[INF] "));
     CHECK(out.back() == ' ');  // header always ends with " " (payload appended after)
 }
 
-TEST_CASE("format_header omits the name bracket when name is empty") {
+TEST_CASE("format_header omits the tag bracket when the tag is empty") {
     formatter fmt{};
     auto out = format_one(fmt, log_clock::now(), level::warn);
 
@@ -117,7 +117,7 @@ TEST_CASE("format_header omits the name bracket when name is empty") {
     CHECK(out.substr(26) == "[WRN] ");
 }
 
-TEST_CASE("format_header patches the level tag per call") {
+TEST_CASE("format_header patches the level label per call") {
     formatter fmt{};
     auto tp = log_clock::now();
 
@@ -134,16 +134,16 @@ TEST_CASE("level_offset points at the level character (used by color sinks)") {
     // anon header: "[YYYY-MM-DD HH:MM:SS.mmm] [" -> offset 27
     CHECK(formatter{}.level_offset() == 27);
 
-    // named "abc" header inserts "[abc] " before the level bracket -> offset 27 + 6 = 33
+    // tag "abc" inserts "[abc] " before the level bracket -> offset 27 + 6 = 33
     CHECK(formatter{"abc"}.level_offset() == 33);
 }
 
-TEST_CASE("set_logger_name updates the header") {
+TEST_CASE("set_tag updates the header") {
     formatter fmt{"old"};
     auto out1 = format_one(fmt, log_clock::now(), level::info);
     CHECK(contains(out1, "[old]"));
 
-    fmt.set_logger_name("new");
+    fmt.set_tag("new");
     auto out2 = format_one(fmt, log_clock::now(), level::info);
     CHECK(!contains(out2, "[old]"));
     CHECK(contains(out2, "[new]"));
@@ -243,13 +243,13 @@ TEST_CASE("format_options{show_date=false, precision=none} produces time-only he
 }
 
 TEST_CASE("level_offset() reflects the format_options layout") {
-    // no date, no fractional, no name: "[HH:MM:SS] [" -> level char at offset 12
+    // no date, no fractional, no tag: "[HH:MM:SS] [" -> level char at offset 12
     CHECK(formatter({}, format_options{.show_date = false, .precision = time_precision::none}).level_offset() == 12);
-    // no date, with millis, no name: "[HH:MM:SS.mmm] [" -> level char at offset 16
+    // no date, with millis, no tag: "[HH:MM:SS.mmm] [" -> level char at offset 16
     CHECK(formatter({}, format_options{.show_date = false}).level_offset() == 16);
-    // with date, no fractional, no name: "[YYYY-MM-DD HH:MM:SS] [" -> level char at offset 23
+    // with date, no fractional, no tag: "[YYYY-MM-DD HH:MM:SS] [" -> level char at offset 23
     CHECK(formatter({}, format_options{.precision = time_precision::none}).level_offset() == 23);
-    // with date, ns precision, no name: "[YYYY-MM-DD HH:MM:SS.nnnnnnnnn] [" -> level char at offset 33
+    // with date, ns precision, no tag: "[YYYY-MM-DD HH:MM:SS.nnnnnnnnn] [" -> level char at offset 33
     CHECK(formatter({}, format_options{.precision = time_precision::ns}).level_offset() == 33);
 }
 
@@ -284,13 +284,13 @@ TEST_CASE("show_thread_id is stable per thread") {
 }
 
 TEST_CASE("show_thread_id shifts level_offset by 9 bytes") {
-    // Adds "[tttttt] " = 9 bytes between timestamp and name/level brackets.
+    // Adds "[tttttt] " = 9 bytes between timestamp and tag/level brackets.
     const auto base = formatter{}.level_offset();
     const auto with_tid = formatter({}, format_options{.show_thread_id = true}).level_offset();
     CHECK(with_tid == base + 9);
 
-    // Same shift with a logger name.
-    const auto named = formatter{"app"}.level_offset();
-    const auto named_tid = formatter{"app", format_options{.show_thread_id = true}}.level_offset();
-    CHECK(named_tid == named + 9);
+    // Same shift with a tag.
+    const auto tagged = formatter{"app"}.level_offset();
+    const auto tagged_tid = formatter{"app", format_options{.show_thread_id = true}}.level_offset();
+    CHECK(tagged_tid == tagged + 9);
 }

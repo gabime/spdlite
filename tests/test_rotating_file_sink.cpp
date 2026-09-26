@@ -52,7 +52,7 @@ TEST_CASE("rotation produces an archive once max_size is exceeded") {
     {
         // 4 ~55-byte log lines exceed the 128-byte cap on the 3rd write, producing exactly one
         // rotation. max_files=10 ensures the resulting app.1.txt isn't pruned out of the window.
-        logger_st<rotating_file_sink> log{"r", rotating_file_sink{path, 128, 10}};
+        logger_st<rotating_file_sink> log{rotating_file_sink{path, 128, 10}};
         for (int i = 0; i < 4; ++i) log.info("padding line number {}", i);
     }
 
@@ -65,7 +65,7 @@ TEST_CASE("max_files window keeps only the newest N archives") {
     const auto path = td / "app.txt";
     {
         // many rotations under a window of 2; only the two newest archives should survive
-        logger_st<rotating_file_sink> log{"r", rotating_file_sink{path, 128, 2}};
+        logger_st<rotating_file_sink> log{rotating_file_sink{path, 128, 2}};
         for (int i = 0; i < 60; ++i) log.info("padding line number {}", i);
     }
 
@@ -118,7 +118,7 @@ TEST_CASE("counter resumes across restarts") {
 
     {
         // construct, write enough to trigger one rotation
-        logger_st<rotating_file_sink> log{"r", rotating_file_sink{path, 128, 10}};
+        logger_st<rotating_file_sink> log{rotating_file_sink{path, 128, 10}};
         for (int i = 0; i < 10; ++i) log.info("padding line number {}", i);
     }
 
@@ -145,7 +145,7 @@ TEST_CASE("max_files=0 bounds the active file and keeps no archives") {
     const auto path = td / "app.txt";
     {
         // many rotations under a window of 0 - every rename is immediately undone by the delete
-        logger_st<rotating_file_sink> log{"r", rotating_file_sink{path, 128, 0}};
+        logger_st<rotating_file_sink> log{rotating_file_sink{path, 128, 0}};
         for (int i = 0; i < 30; ++i) log.info("padding line number {}", i);
     }
     CHECK(fs::exists(path));
@@ -265,7 +265,7 @@ TEST_CASE("symlinks in the log directory are ignored by the archive scanner") {
         // window=[5,5] if the symlink were treated as an archive; the next archive
         // would land at .6.txt. with the symlink correctly ignored, counter starts
         // fresh and the next archive lands at .1.txt.
-        logger_st<rotating_file_sink> log{"r", rotating_file_sink{path, 128, 1}};
+        logger_st<rotating_file_sink> log{rotating_file_sink{path, 128, 1}};
         for (int i = 0; i < 4; ++i) log.info("padding line number {}", i);
     }
 
@@ -286,7 +286,7 @@ TEST_CASE("subdirectory named like an archive is ignored") {
     {
         // if scanner mistakenly treated the dir as archive idx=5, next archive
         // would be .6.txt. correct behavior: dir ignored, next archive is .1.txt.
-        logger_st<rotating_file_sink> log{"r", rotating_file_sink{path, 128, 1}};
+        logger_st<rotating_file_sink> log{rotating_file_sink{path, 128, 1}};
         for (int i = 0; i < 4; ++i) log.info("padding line number {}", i);
     }
 
@@ -309,7 +309,7 @@ TEST_CASE("archive index exceeding SIZE_MAX is ignored without overflow") {
 
     {
         // both lookalikes must be ignored; counter starts at 1.
-        logger_st<rotating_file_sink> log{"r", rotating_file_sink{path, 128, 1}};
+        logger_st<rotating_file_sink> log{rotating_file_sink{path, 128, 1}};
         for (int i = 0; i < 4; ++i) log.info("padding line number {}", i);
     }
 

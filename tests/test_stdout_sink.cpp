@@ -35,7 +35,8 @@ TEST_CASE("stdout_sink writes the formatted line to the given FILE") {
     std::FILE* f = std::fopen(path.string().c_str(), "wb");
     REQUIRE(f != nullptr);
     {
-        logger_st<stdout_sink> log{"app", stdout_sink{f}};
+        logger_st<stdout_sink> log{stdout_sink{f}};
+        log.set_tag("app");
         log.info("hello {}", 42);
         log.warn("second line");
         log.flush();
@@ -56,7 +57,7 @@ TEST_CASE("stdout_sink does not own/close the FILE it was given") {
     std::FILE* f = std::fopen(path.string().c_str(), "wb");
     REQUIRE(f != nullptr);
     {
-        logger_st<stdout_sink> log{"app", stdout_sink{f}};
+        logger_st<stdout_sink> log{stdout_sink{f}};
         log.info("x");
     }  // logger (and its sink copy) destroyed - must NOT have closed f
     // f is still usable
@@ -66,7 +67,7 @@ TEST_CASE("stdout_sink does not own/close the FILE it was given") {
 }
 
 TEST_CASE("stderr_sink writes without throwing") {
-    logger_st<stderr_sink> log{"e", stderr_sink{}};
+    logger_st<stderr_sink> log{stderr_sink{}};
     CHECK_NOTHROW(log.error("to stderr"));
     CHECK_NOTHROW(log.flush());
 }

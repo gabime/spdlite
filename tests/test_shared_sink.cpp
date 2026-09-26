@@ -16,7 +16,7 @@ TEST_CASE("shared_sink forwards writes to the underlying sink") {
     auto inner = std::make_shared<capture_sink>();
     shared_sink<capture_sink> wrapped{inner};
 
-    logger_st<shared_sink<capture_sink>> log{"a", wrapped};
+    logger_st<shared_sink<capture_sink>> log{wrapped};
     log.info("hello");
     log.warn("there");
 
@@ -29,8 +29,10 @@ TEST_CASE("two loggers can share one underlying sink") {
     auto inner = std::make_shared<capture_sink>();
     shared_sink<capture_sink> wrapped{inner};
 
-    logger_st<shared_sink<capture_sink>> a{"a", wrapped};
-    logger_st<shared_sink<capture_sink>> b{"b", wrapped};
+    logger_st<shared_sink<capture_sink>> a{wrapped};
+    logger_st<shared_sink<capture_sink>> b{wrapped};
+    a.set_tag("a");
+    b.set_tag("b");
 
     a.info("from-a");
     b.info("from-b");

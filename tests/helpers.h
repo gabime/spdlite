@@ -29,6 +29,7 @@ struct capture_sink {
         std::mutex mu;
         std::vector<std::string> formatted;
         std::vector<std::string> payloads;
+        std::vector<std::string> tags;
         std::vector<spdlite::level> levels;
         std::vector<std::size_t> level_offsets;
         std::size_t flush_count{0};
@@ -48,6 +49,7 @@ struct capture_sink {
         std::lock_guard<std::mutex> lock(state->mu);
         state->formatted.emplace_back(msg.formatted);
         state->payloads.emplace_back(msg.payload);
+        state->tags.emplace_back(msg.tag);
         state->levels.push_back(msg.log_level);
         state->level_offsets.push_back(msg.level_offset);
     }

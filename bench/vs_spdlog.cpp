@@ -28,7 +28,8 @@
 // --- disabled at runtime ---
 
 static void spdlite_disabled(benchmark::State& state) {
-    spdlite::logger_st<spdlite::null_sink> log("bench", spdlite::null_sink{});
+    spdlite::logger_st<spdlite::null_sink> log(spdlite::null_sink{});
+    log.set_tag("bench");
     log.set_log_level(spdlite::level::off);
     int i = 0;
     for (auto _ : state) {
@@ -49,7 +50,8 @@ static void spdlog_disabled(benchmark::State& state) {
 // --- null sink, formatted (single-threaded) ---
 
 static void spdlite_null_fmt_st(benchmark::State& state) {
-    spdlite::logger_st<spdlite::null_sink> log("bench", spdlite::null_sink{});
+    spdlite::logger_st<spdlite::null_sink> log(spdlite::null_sink{});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -75,7 +77,8 @@ static const char* long_msg =
     "nisi turpis ornare nisl, sit amet volutpat neque massa eu odio. Maecenas malesuada quam ex.";
 
 static void spdlite_null_cstr_st(benchmark::State& state) {
-    spdlite::logger_st<spdlite::null_sink> log("bench", spdlite::null_sink{});
+    spdlite::logger_st<spdlite::null_sink> log(spdlite::null_sink{});
+    log.set_tag("bench");
     for (auto _ : state) {
         log.info(long_msg);
     }
@@ -92,7 +95,8 @@ static void spdlog_null_cstr_st(benchmark::State& state) {
 // --- color stdout (single-threaded) ---
 
 static void spdlite_color_st(benchmark::State& state) {
-    spdlite::logger_st<spdlite::console_sink> log("bench", spdlite::console_sink{});
+    spdlite::logger_st<spdlite::console_sink> log(spdlite::console_sink{});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -111,7 +115,8 @@ static void spdlog_color_st(benchmark::State& state) {
 // --- color stdout (multi-threaded) ---
 
 static void spdlite_color_mt(benchmark::State& state) {
-    static spdlite::logger_mt<spdlite::console_sink> log("bench", spdlite::console_sink{});
+    static spdlite::logger_mt<spdlite::console_sink> log(spdlite::console_sink{});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -137,8 +142,8 @@ static void spdlog_color_mt(benchmark::State& state) {
 static std::filesystem::path bench_dir() { return std::filesystem::temp_directory_path() / "spdlite_bench"; }
 
 static void spdlite_file_st(benchmark::State& state) {
-    spdlite::logger_st<spdlite::file_sink> log("bench",
-                                               spdlite::file_sink{bench_dir() / "vs_basic_st.log", spdlite::open_mode::truncate});
+    spdlite::logger_st<spdlite::file_sink> log(spdlite::file_sink{bench_dir() / "vs_basic_st.log", spdlite::open_mode::truncate});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -158,7 +163,8 @@ static void spdlog_file_st(benchmark::State& state) {
 
 static void spdlite_file_mt(benchmark::State& state) {
     static spdlite::logger_mt<spdlite::file_sink> log(
-        "bench", spdlite::file_sink{bench_dir() / "vs_basic_mt.log", spdlite::open_mode::truncate});
+        spdlite::file_sink{bench_dir() / "vs_basic_mt.log", spdlite::open_mode::truncate});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -198,7 +204,8 @@ static void reset_rot_dir() {
 static void spdlite_rotating_file_st(benchmark::State& state) {
     reset_rot_dir();
     spdlite::logger_st<spdlite::rotating_file_sink> log(
-        "bench", spdlite::rotating_file_sink{rot_dir() / "lite.txt", rot_max_size, rot_max_files});
+        spdlite::rotating_file_sink{rot_dir() / "lite.txt", rot_max_size, rot_max_files});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -220,7 +227,8 @@ static void spdlite_rotating_file_mt(benchmark::State& state) {
     static auto& log = []() -> spdlite::logger_mt<spdlite::rotating_file_sink>& {
         reset_rot_dir();
         static spdlite::logger_mt<spdlite::rotating_file_sink> l(
-            "bench", spdlite::rotating_file_sink{rot_dir() / "lite_mt.txt", rot_max_size, rot_max_files});
+            spdlite::rotating_file_sink{rot_dir() / "lite_mt.txt", rot_max_size, rot_max_files});
+        l.set_tag("bench");
         return l;
     }();
     int i = 0;

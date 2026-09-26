@@ -130,9 +130,9 @@ inline void console_sink_base::write(const log_msg& msg) {
     const auto level_start = msg.level_offset;
     const auto level_end = level_start + level_width;
 
-    // before level tag
+    // before level label
     write_console_(data, level_start);
-    // colored level tag
+    // colored level label
     ::SetConsoleTextAttribute(handle_, colors_[static_cast<std::size_t>(msg.log_level)]);
     write_console_(data + level_start, level_width);
     // reset and remainder
@@ -177,7 +177,7 @@ constexpr std::string_view red_bold = "\033[31m\033[1m";
 constexpr std::string_view bold_on_red = "\033[1m\033[41m";
 }  // namespace ansi_color
 
-// wraps ANSI escape codes around the level tag (level_width chars) in the formatted output.
+// wraps ANSI escape codes around the level label (level_width chars) in the formatted output.
 // rebuilds the line into cbuf_ with: [prefix][color][LVL][reset][rest].
 struct console_sink_base {
     explicit console_sink_base(std::FILE* file, color_mode mode = color_mode::automatic);

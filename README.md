@@ -19,7 +19,7 @@ Or via CMake (`find_package`, `FetchContent`, or `add_subdirectory`), link `spdl
 #include "spdlite/sinks/console_sink.h"
 
 int main() {
-    spdlite::logger_mt<console_sink> log;
+    spdlite::logger_mt<spdlite::console_sink> log;
 
     log.info("Hello {}", "world");
     log.info("Value: {}", 42);
@@ -46,8 +46,8 @@ per call, so multiple threads can write through the same instance safely.
 If you don't require thread safety, you can use `logger_st` which skips the lock entirely:
 
 ```c++
-spdlite::logger_mt<console_sink> log("app");     // std::mutex
-spdlite::logger_st<console_sink> log_st("app");  // no locking
+spdlite::logger_mt<console_sink> log;     // std::mutex
+spdlite::logger_st<console_sink> log_st;  // no locking
 ```
 
 Both share the same API; only the mutex type differs.
@@ -61,7 +61,7 @@ its sinks or mutex type:
 void connect(spdlite::logger& log);     // accepts any logger_mt / logger_st
 std::shared_ptr<spdlite::logger> log_;  // shared ownership
 
-spdlite::logger_mt<console_sink, file_sink> app("app", console_sink{}, file_sink{"app.txt"});
+spdlite::logger_mt<console_sink, file_sink> app(console_sink{}, file_sink{"app.txt"});
 connect(app);
 ```
 
@@ -73,13 +73,24 @@ Level filtering and the log overloads are non-virtual, so a disabled call throug
 A logger with no sinks defaults to `level::off`, so every call returns after one level check:
 
 ```c++
-spdlite::logger_st<> log("app");  // discards everything, no formatting
+spdlite::logger_st<> log;  // discards everything, no formatting
 ```
+
+## Tags
+
+A tag labels every line from a logger - handy when several loggers write to one file:
+
+```c++
+log.set_tag("net");
+log.info("connected");  // [2026-04-11 10:30:45.123] [net] [INF] connected
+```
+
+Loggers have no tag by default.
 
 ## Formatter options
 
-The default header is `[YYYY-MM-DD HH:MM:SS.mmm] [name] [LVL] payload`. Reconfigure
-via `format_options`:
+The default header is `[YYYY-MM-DD HH:MM:SS.mmm] [LVL] payload` (with `[tag]` before the level
+when a tag is set). Reconfigure via `format_options`:
 
 ```c++
 log.set_format_options({.utc = true});

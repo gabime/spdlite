@@ -51,7 +51,7 @@ TEST_CASE("file_sink truncate mode discards existing contents") {
     REQUIRE(read_all(path) == "preexisting\n");
 
     {
-        logger_st<file_sink> log{"x", file_sink{path, open_mode::truncate}};
+        logger_st<file_sink> log{file_sink{path, open_mode::truncate}};
         log.info("fresh");
     }
 
@@ -69,7 +69,7 @@ TEST_CASE("file_sink append mode preserves existing contents") {
     }
 
     {
-        logger_st<file_sink> log{"x", file_sink{path}};  // default = append
+        logger_st<file_sink> log{file_sink{path}};  // default = append
         log.info("added");
     }
 
@@ -82,12 +82,13 @@ TEST_CASE("file_sink writes the formatted line (header + payload + newline)") {
     helpers::tmpdir td{"file_write"};
     const auto path = td / "out.txt";
     {
-        logger_st<file_sink> log{"name", file_sink{path, open_mode::truncate}};
+        logger_st<file_sink> log{file_sink{path, open_mode::truncate}};
+        log.set_tag("app");
         log.info("hello");
         log.warn("there");
     }
     auto contents = read_all(path);
-    CHECK(contains(contents, "[name]"));
+    CHECK(contains(contents, "[app]"));
     CHECK(contains(contents, "[INF] hello"));
     CHECK(contains(contents, "[WRN] there"));
     CHECK(contents.back() == '\n');

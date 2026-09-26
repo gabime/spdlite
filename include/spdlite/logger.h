@@ -28,9 +28,9 @@ concept log_sink = requires(T & s, const log_msg& m) {
     s.flush();
 };
 
-// spdlite logger. Holds the name and log level, filters messages by level and provides the logging API.
+// spdlite logger. Holds the tag and log level, filters messages by level and provides the logging API.
 // Usage:
-//     spdlite::logger_mt<spdlite::console_sink> log("app");
+//     spdlite::logger_mt<spdlite::console_sink> log;
 //     log.info("connected to {} in {} ms", host, elapsed_ms);
 class logger {
 public:
@@ -98,9 +98,10 @@ public:
     [[nodiscard]] level get_log_level() const noexcept { return level_.load(std::memory_order_relaxed); }
     void set_flush_level(level lvl) noexcept { flush_level_.store(lvl, std::memory_order_relaxed); }
     [[nodiscard]] level get_flush_level() const noexcept { return flush_level_.load(std::memory_order_relaxed); }
-    [[nodiscard]] std::string_view get_name() const noexcept { return name_; }
 
-    virtual void set_name(std::string_view new_name) = 0;
+    // Printed as "[tag]" in every line, none by default. Not synchronized with get_tag() - set it up front.
+    virtual void set_tag(std::string_view tag) = 0;
+    [[nodiscard]] std::string_view get_tag() const noexcept { return tag_; }
 
     // Reconfigure the cached header (utc, show_date, show_thread_id, precision). Cheap - one ctor call.
     virtual void set_format_options(format_options opts) = 0;
@@ -108,12 +109,11 @@ public:
     virtual void flush() const noexcept = 0;
 
 protected:
-    logger(std::string name, level lvl)
-        : name_(std::move(name)),
-          level_(lvl) {}
+    explicit logger(level lvl)
+        : level_(lvl) {}
 
     logger(logger&& other) noexcept
-        : name_(std::move(other.name_)),
+        : tag_(std::move(other.tag_)),
           level_(other.level_.load(std::memory_order_relaxed)),
           flush_level_(other.flush_level_.load(std::memory_order_relaxed)) {
         other.level_.store(level::off, std::memory_order_relaxed);
@@ -122,7 +122,7 @@ protected:
     virtual void log_sv_(level lvl, std::string_view sv) const noexcept = 0;
     virtual void log_fmt_args_(level lvl, format_string_view_t fmt_str, format_args_t args) const noexcept = 0;
 
-    std::string name_;
+    std::string tag_;
 
 private:
     detail::atomic_level_t level_;
@@ -134,20 +134,13 @@ private:
 template <typename Mutex, typename... Sinks>
 class logger_impl final : public logger {
 public:
-    explicit logger_impl(std::string name, Sinks... sinks) requires(sizeof...(Sinks) > 0)
-        : logger(std::move(name), default_level),
-          formatter_(name_),
+    explicit logger_impl(Sinks... sinks) requires(log_sink<Sinks>&&...)
+        : logger(default_level),
           sinks_(std::move(sinks)...) {}
 
-    explicit logger_impl(Sinks... sinks) requires(sizeof...(Sinks) > 0 && (log_sink<Sinks> && ...))
-        : logger({}, default_level),
-          formatter_(name_),
-          sinks_(std::move(sinks)...) {}
-
-    // Default-constructs the sinks: logger_mt<console_sink> log("app");
-    explicit logger_impl(std::string name = {}) requires(std::is_default_constructible_v<Sinks>&&...)
-        : logger(std::move(name), default_level),
-          formatter_(name_) {}
+    // Default-constructs the sinks: logger_mt<console_sink> log;
+    logger_impl() requires(sizeof...(Sinks) > 0 && (std::is_default_constructible_v<Sinks> && ...))
+        : logger(default_level) {}
 
     logger_impl(logger_impl&& other) noexcept
         : logger(std::move(other)),
@@ -155,15 +148,15 @@ public:
           buf_(std::move(other.buf_)),
           sinks_(std::move(other.sinks_)) {}
 
-    void set_name(std::string_view new_name) override {
+    void set_tag(std::string_view tag) override {
         std::lock_guard<Mutex> lock(mutex_);
-        name_.assign(new_name);
-        formatter_.set_logger_name(name_);
+        tag_.assign(tag);
+        formatter_.set_tag(tag_);
     }
 
     void set_format_options(format_options opts) override {
         std::lock_guard<Mutex> lock(mutex_);
-        formatter_ = formatter{name_, opts};
+        formatter_ = formatter{tag_, opts};
     }
 
     void flush() const noexcept override {
@@ -195,7 +188,7 @@ private:
             buf_.push_back('\n');
             std::string_view formatted{buf_.data(), buf_.size()};
             std::string_view payload{buf_.data() + payload_start, payload_end - payload_start};
-            log_msg msg(now, name_, lvl, formatted, payload, formatter_.level_offset());
+            log_msg msg(now, tag_, lvl, formatted, payload, formatter_.level_offset());
             std::apply([&](auto&... s) { (s.write(msg), ...); }, sinks_);
             if (should_flush(lvl)) std::apply([](auto&... s) { (s.flush(), ...); }, sinks_);
         } catch (const std::exception& ex) {
@@ -226,7 +219,7 @@ private:
             buf_.push_back('\n');
             std::string_view formatted{buf_.data(), buf_.size()};
             std::string_view payload{buf_.data() + payload_start, payload_end - payload_start};
-            log_msg msg(now, name_, lvl, formatted, payload, formatter_.level_offset());
+            log_msg msg(now, tag_, lvl, formatted, payload, formatter_.level_offset());
             std::apply([&](auto&... s) { (s.write(msg), ...); }, sinks_);
             if (should_flush(lvl)) std::apply([](auto&... s) { (s.flush(), ...); }, sinks_);
         } catch (const std::exception& ex) {

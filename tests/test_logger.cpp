@@ -2,6 +2,7 @@
 
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -16,25 +17,71 @@ using namespace spdlite;
 using helpers::capture_sink;
 using helpers::contains;
 
-TEST_CASE("named ctor sets the logger name and embeds it in the header") {
+TEST_CASE("set_tag embeds the tag in the header") {
     capture_sink cap;
-    logger_st<capture_sink> log{"my_logger", cap};
+    logger_st<capture_sink> log{cap};
+    log.set_tag("my_tag");
 
-    CHECK(log.get_name() == "my_logger");
+    CHECK(log.get_tag() == "my_tag");
     log.info("hello");
     REQUIRE(cap.state->formatted.size() == 1);
-    CHECK(contains(cap.state->formatted[0], "[my_logger]"));
+    CHECK(contains(cap.state->formatted[0], "] [my_tag] [INF] hello"));
 }
 
-TEST_CASE("sinks-only ctor produces an empty name and no name bracket in the header") {
+TEST_CASE("no tag by default and no tag bracket in the header") {
     capture_sink cap;
     logger_st<capture_sink> log{cap};
 
-    CHECK(log.get_name().empty());
+    CHECK(log.get_tag().empty());
     log.info("hello");
     REQUIRE(cap.state->formatted.size() == 1);
-    // header shape with no name: "[ts] [INF] hello\n" - level tag butts up against payload
-    CHECK(contains(cap.state->formatted[0], "[INF] hello"));
+    // header shape with no tag: "[ts] [INF] hello\n" - only the timestamp and level brackets
+    const auto& line = cap.state->formatted[0];
+    CHECK(contains(line, "] [INF] hello"));
+    CHECK(std::count(line.begin(), line.end(), '[') == 2);
+}
+
+TEST_CASE("set_tag replaces the tag and an empty tag removes the bracket") {
+    capture_sink cap;
+    logger_st<capture_sink> log{cap};
+
+    log.set_tag("a");
+    log.info("1");
+    log.set_tag("b");
+    log.info("2");
+    log.set_tag("");
+    log.info("3");
+    REQUIRE(cap.state->formatted.size() == 3);
+    CHECK(contains(cap.state->formatted[0], "] [a] [INF] 1"));
+    CHECK(contains(cap.state->formatted[1], "] [b] [INF] 2"));
+    CHECK(!contains(cap.state->formatted[1], "[a]"));
+    CHECK(std::count(cap.state->formatted[2].begin(), cap.state->formatted[2].end(), '[') == 2);
+}
+
+TEST_CASE("the logger keeps its own copy of the tag") {
+    capture_sink cap;
+    logger_st<capture_sink> log{cap};
+    {
+        std::string temp = "temporary";
+        log.set_tag(temp);
+        temp.assign("overwritten");
+    }
+    CHECK(log.get_tag() == "temporary");
+    log.info("x");
+    REQUIRE(cap.state->formatted.size() == 1);
+    CHECK(contains(cap.state->formatted[0], "[temporary]"));
+}
+
+TEST_CASE("sinks receive the tag in log_msg::tag") {
+    capture_sink cap;
+    logger_st<capture_sink> log{cap};
+
+    log.info("untagged");
+    log.set_tag("net");
+    log.info("tagged");
+    REQUIRE(cap.state->tags.size() == 2);
+    CHECK(cap.state->tags[0].empty());
+    CHECK(cap.state->tags[1] == "net");
 }
 
 namespace {
@@ -60,54 +107,43 @@ struct needs_arg_sink {
 
 }  // namespace
 
-// every ctor form resolves to exactly one ctor, also when the sinks are default-constructible
-static_assert(std::is_constructible_v<logger_st<default_sink>>);
-static_assert(std::is_constructible_v<logger_st<default_sink>, std::string>);
+// ctors take only sinks; the tag is set with set_tag()
+static_assert(std::is_default_constructible_v<logger_st<default_sink>>);
 static_assert(std::is_constructible_v<logger_st<default_sink>, default_sink>);
-static_assert(std::is_constructible_v<logger_st<default_sink>, std::string, default_sink>);
-static_assert(std::is_constructible_v<logger_st<>>);
-static_assert(std::is_constructible_v<logger_st<>, std::string>);
+static_assert(std::is_default_constructible_v<logger_st<>>);
+static_assert(!std::is_constructible_v<logger_st<default_sink>, std::string>);
+static_assert(!std::is_constructible_v<logger_st<default_sink>, std::string, default_sink>);
+static_assert(!std::is_constructible_v<logger_st<>, std::string>);
 
 // sinks without a default ctor must be passed explicitly, also when mixed with default-constructible ones
-static_assert(!std::is_constructible_v<logger_st<needs_arg_sink>>);
-static_assert(!std::is_constructible_v<logger_st<needs_arg_sink>, std::string>);
-static_assert(std::is_constructible_v<logger_st<needs_arg_sink>, std::string, needs_arg_sink>);
-static_assert(!std::is_constructible_v<logger_st<default_sink, needs_arg_sink>, std::string>);
-static_assert(std::is_constructible_v<logger_st<default_sink, needs_arg_sink>, std::string, default_sink, needs_arg_sink>);
+static_assert(!std::is_default_constructible_v<logger_st<needs_arg_sink>>);
+static_assert(std::is_constructible_v<logger_st<needs_arg_sink>, needs_arg_sink>);
+static_assert(!std::is_default_constructible_v<logger_st<default_sink, needs_arg_sink>>);
+static_assert(std::is_constructible_v<logger_st<default_sink, needs_arg_sink>, default_sink, needs_arg_sink>);
 
-// explicit: a name never converts implicitly to a logger
-static_assert(!std::is_convertible_v<std::string, logger_st<default_sink>>);
-static_assert(!std::is_convertible_v<std::string, logger_st<>>);
+// explicit: a sink never converts implicitly to a logger
+static_assert(!std::is_convertible_v<default_sink, logger_st<default_sink>>);
 
 // bundled sinks
-static_assert(std::is_constructible_v<logger_mt<null_sink>, std::string>);
-static_assert(!std::is_constructible_v<logger_mt<file_sink>, std::string>);
+static_assert(std::is_default_constructible_v<logger_mt<null_sink>>);
+static_assert(!std::is_default_constructible_v<logger_mt<file_sink>>);
 
-TEST_CASE("name-only ctor default-constructs the sinks") {
-    default_sink::lines.clear();
-    logger_st<default_sink> log{"app"};
-
-    CHECK(log.get_name() == "app");
-    CHECK(log.get_log_level() == level::info);
-    log.info("hello {}", 1);
-    REQUIRE(default_sink::lines.size() == 1);
-    CHECK(contains(default_sink::lines[0], "[app] [INF] hello 1"));
-}
-
-TEST_CASE("default ctor default-constructs the sinks with an empty name") {
+TEST_CASE("default ctor default-constructs the sinks") {
     default_sink::lines.clear();
     logger_st<default_sink> log;
 
-    CHECK(log.get_name().empty());
-    log.warn("w");
+    CHECK(log.get_tag().empty());
+    CHECK(log.get_log_level() == level::info);
+    log.warn("hello {}", 1);
     REQUIRE(default_sink::lines.size() == 1);
-    CHECK(contains(default_sink::lines[0], "[WRN] w"));
+    CHECK(contains(default_sink::lines[0], "] [WRN] hello 1"));
 }
 
-TEST_CASE("name-only ctor default-constructs every sink of a multi-sink logger") {
+TEST_CASE("default ctor default-constructs every sink of a multi-sink logger") {
     default_sink::lines.clear();
     other_default_sink::lines.clear();
-    logger_st<default_sink, other_default_sink> log{"multi"};
+    logger_st<default_sink, other_default_sink> log;
+    log.set_tag("multi");
 
     log.error("boom");
     REQUIRE(default_sink::lines.size() == 1);
@@ -116,9 +152,10 @@ TEST_CASE("name-only ctor default-constructs every sink of a multi-sink logger")
     CHECK(default_sink::lines[0] == other_default_sink::lines[0]);
 }
 
-TEST_CASE("name-only ctor works with make_shared behind shared_ptr<logger>") {
+TEST_CASE("default-constructed logger works with make_shared and set_tag behind shared_ptr<logger>") {
     default_sink::lines.clear();
-    std::shared_ptr<logger> log = std::make_shared<logger_mt<default_sink>>("shared");
+    std::shared_ptr<logger> log = std::make_shared<logger_mt<default_sink>>();
+    log->set_tag("shared");
 
     log->info("via {}", "shared_ptr");
     REQUIRE(default_sink::lines.size() == 1);
@@ -128,29 +165,27 @@ TEST_CASE("name-only ctor works with make_shared behind shared_ptr<logger>") {
 TEST_CASE("an explicitly passed sink is used even when the sink is default-constructible") {
     static_assert(std::is_default_constructible_v<capture_sink>);
     capture_sink cap;
-    logger_st<capture_sink> named{"app", cap};
-    logger_st<capture_sink> unnamed{cap};
+    logger_st<capture_sink> log{cap};
 
-    named.info("a");
-    unnamed.info("b");
-    REQUIRE(cap.state->payloads.size() == 2);
+    log.info("a");
+    REQUIRE(cap.state->payloads.size() == 1);
     CHECK(cap.state->payloads[0] == "a");
-    CHECK(cap.state->payloads[1] == "b");
 }
 
 TEST_CASE("sinkless logger defaults to level off") {
-    logger_st<> unnamed;
-    logger_mt<> named{"noop"};
-    CHECK(unnamed.get_log_level() == level::off);
-    CHECK(named.get_log_level() == level::off);
-    CHECK(named.get_name() == "noop");
-    CHECK_FALSE(named.should_log(level::critical));
-    named.info("dropped {}", 1);
-    named.flush();
+    logger_st<> untagged;
+    logger_mt<> tagged;
+    tagged.set_tag("noop");
+    CHECK(untagged.get_log_level() == level::off);
+    CHECK(tagged.get_log_level() == level::off);
+    CHECK(tagged.get_tag() == "noop");
+    CHECK_FALSE(tagged.should_log(level::critical));
+    tagged.info("dropped {}", 1);
+    tagged.flush();
 }
 
 TEST_CASE("log_level get/set round trips") {
-    logger_st<null_sink> log{"x", null_sink{}};
+    logger_st<null_sink> log{null_sink{}};
     CHECK(log.get_log_level() == level::info);  // default
     constexpr level all[] = {level::trace, level::debug, level::info, level::warn, level::err, level::critical, level::off};
     for (auto lvl : all) {
@@ -160,7 +195,7 @@ TEST_CASE("log_level get/set round trips") {
 }
 
 TEST_CASE("flush_level get/set round trips; default is off (no auto-flush)") {
-    logger_st<null_sink> log{"x", null_sink{}};
+    logger_st<null_sink> log{null_sink{}};
     CHECK(log.get_flush_level() == level::off);
     // off => never auto-flush in practice (callers never log at level::off)
     CHECK(log.should_flush(level::trace) == false);
@@ -179,7 +214,7 @@ TEST_CASE("flush_level get/set round trips; default is off (no auto-flush)") {
 
 TEST_CASE("auto-flush triggers when message level >= flush_level") {
     capture_sink cap;
-    logger_st<capture_sink> log{"x", cap};
+    logger_st<capture_sink> log{cap};
     log.set_flush_level(level::err);
 
     log.info("hi");  // below threshold, no flush
@@ -195,7 +230,7 @@ TEST_CASE("auto-flush triggers when message level >= flush_level") {
 TEST_CASE("manual flush() reaches every sink in the tuple") {
     capture_sink a;
     capture_sink b;
-    logger_st<capture_sink, capture_sink> log{"x", a, b};
+    logger_st<capture_sink, capture_sink> log{a, b};
     log.flush();
     log.flush();
     CHECK(a.state->flush_count == 2);
@@ -205,7 +240,7 @@ TEST_CASE("manual flush() reaches every sink in the tuple") {
 TEST_CASE("multi-sink fan-out: every sink sees every message") {
     capture_sink a;
     capture_sink b;
-    logger_st<capture_sink, capture_sink> log{"x", a, b};
+    logger_st<capture_sink, capture_sink> log{a, b};
     log.info("one");
     log.info("two");
     log.info("three");
@@ -216,7 +251,7 @@ TEST_CASE("multi-sink fan-out: every sink sees every message") {
 
 TEST_CASE("string_view overload emits the raw payload with no formatting") {
     capture_sink cap;
-    logger_st<capture_sink> log{"x", cap};
+    logger_st<capture_sink> log{cap};
 
     // Explicit std::string_view selects the raw overload. The fmt overload would
     // reject "{}" at compile time as an unfilled placeholder.
@@ -228,7 +263,7 @@ TEST_CASE("string_view overload emits the raw payload with no formatting") {
 
 TEST_CASE("fmt-string overload formats arguments") {
     capture_sink cap;
-    logger_st<capture_sink> log{"x", cap};
+    logger_st<capture_sink> log{cap};
     log.info("{} + {} = {}", 1, 2, 3);
     REQUIRE(cap.state->payloads.size() == 1);
     CHECK(cap.state->payloads[0] == "1 + 2 = 3");
@@ -236,7 +271,7 @@ TEST_CASE("fmt-string overload formats arguments") {
 
 TEST_CASE("per-level convenience methods set the correct level") {
     capture_sink cap;
-    logger_st<capture_sink> log{"x", cap};
+    logger_st<capture_sink> log{cap};
     log.set_log_level(level::trace);
 
     log.trace("t");
@@ -257,7 +292,7 @@ TEST_CASE("per-level convenience methods set the correct level") {
 
 TEST_CASE("formatted line ends in a newline") {
     capture_sink cap;
-    logger_st<capture_sink> log{"x", cap};
+    logger_st<capture_sink> log{cap};
     log.info("hello");
     REQUIRE(cap.state->formatted.size() == 1);
     CHECK(cap.state->formatted[0].back() == '\n');
@@ -266,7 +301,7 @@ TEST_CASE("formatted line ends in a newline") {
 TEST_CASE("logger never throws to caller when a sink throws on write") {
     capture_sink cap;
     cap.fail_writes(true);
-    logger_st<capture_sink> log{"x", cap};
+    logger_st<capture_sink> log{cap};
     log.set_log_level(level::trace);  // exercise every level path
 
     // Every entrypoint must swallow the sink's exception. Logger writes a line to
@@ -291,7 +326,8 @@ TEST_CASE("logger never throws to caller when a sink throws on write") {
 
 TEST_CASE("format_options() reconfigures the header in place") {
     capture_sink cap;
-    logger_st<capture_sink> log{"app", cap};
+    logger_st<capture_sink> log{cap};
+    log.set_tag("app");
 
     log.info("first");  // default shape
     log.set_format_options({.utc = true, .show_date = false, .precision = time_precision::none});
@@ -309,22 +345,23 @@ TEST_CASE("format_options() reconfigures the header in place") {
     CHECK(!contains(second, "."));  // no .mmm anywhere in header
 }
 
-TEST_CASE("log_msg.level_offset always points at the level tag, for any format_options") {
+TEST_CASE("log_msg.level_offset always points at the level label, for any format_options") {
     // Regression guard: console_sink (and any color sink) relies on msg.level_offset
-    // landing exactly on the 3-byte level tag. If the logger forgets to propagate it
+    // landing exactly on the 3-byte level label. If the logger forgets to propagate it
     // or the formatter miscomputes it, color codes wrap the wrong bytes.
-    auto check = [](format_options opts, level lvl, std::string_view tag, std::string_view name) {
+    auto check = [](format_options opts, level lvl, std::string_view label, std::string_view tag) {
         capture_sink cap;
-        logger_st<capture_sink> log{std::string{name}, cap};
+        logger_st<capture_sink> log{cap};
+        log.set_tag(tag);
         log.set_format_options(opts);
         log.set_log_level(level::trace);
         log.log(lvl, "x");
         REQUIRE(cap.state->formatted.size() == 1);
         const auto& line = cap.state->formatted[0];
         const auto offset = cap.state->level_offsets[0];
-        CHECK(line.substr(offset, level_width) == tag);
+        CHECK(line.substr(offset, level_width) == label);
     };
-    // matrix: every flag combo x named/unnamed x representative levels
+    // matrix: every flag combo x tagged/untagged x representative levels
     check({}, level::info, "INF", "app");
     check({}, level::info, "INF", "");
     check({.utc = true}, level::warn, "WRN", "app");
@@ -339,11 +376,12 @@ TEST_CASE("log_msg.level_offset always points at the level tag, for any format_o
 
 TEST_CASE("formatted line contains the rendered payload after the header") {
     capture_sink cap;
-    logger_st<capture_sink> log{"name", cap};
+    logger_st<capture_sink> log{cap};
+    log.set_tag("app");
     log.info("value={}", 42);
     REQUIRE(cap.state->formatted.size() == 1);
     const auto& line = cap.state->formatted[0];
-    CHECK(contains(line, "[name]"));
+    CHECK(contains(line, "[app]"));
     CHECK(contains(line, "[INF]"));
     CHECK(contains(line, "value=42"));
 }

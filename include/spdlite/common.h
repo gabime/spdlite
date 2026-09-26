@@ -163,7 +163,7 @@ enum class level : std::uint8_t { trace = 0, debug = 1, info = 2, warn = 3, err 
 
 constexpr auto levels_count = static_cast<std::size_t>(level::n_levels);
 
-// fixed-width 3-char tags - every level prints to exactly level_width bytes so
+// fixed-width 3-char labels - every level prints to exactly level_width bytes so
 // the formatter can patch a fixed-size slot in its cached header.
 constexpr std::size_t level_width = 3;
 constexpr std::array<std::string_view, levels_count> level_names{"TRC", "DBG", "INF", "WRN", "ERR", "CRT", "OFF"};
@@ -202,10 +202,11 @@ namespace spdlite {
 // lightweight message descriptor passed to sinks - all views, no ownership.
 // `formatted` covers the whole line the logger produced (header + payload + newline).
 // `payload` is the raw user message, no header, no trailing newline.
-// `level_offset` is the byte offset of the level tag inside `formatted` (for color sinks).
+// `tag` is the logger's tag (empty if none).
+// `level_offset` is the byte offset of the level label inside `formatted` (for color sinks).
 struct log_msg {
     log_clock::time_point time;
-    std::string_view logger_name;
+    std::string_view tag;
     level log_level{level::off};
     std::string_view formatted;
     std::string_view payload;
@@ -214,13 +215,13 @@ struct log_msg {
     log_msg() = default;
 
     log_msg(log_clock::time_point log_time,
-            std::string_view name,
+            std::string_view logger_tag,
             level lvl,
             std::string_view line,
             std::string_view raw,
             std::size_t lvl_offset)
         : time(log_time),
-          logger_name(name),
+          tag(logger_tag),
           log_level(lvl),
           formatted(line),
           payload(raw),

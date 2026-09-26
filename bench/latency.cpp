@@ -26,7 +26,8 @@ static std::filesystem::path bench_dir() { return std::filesystem::temp_director
 
 // Bench with a long C string (no formatting)
 static void bench_null_sink_c_string(benchmark::State& state) {
-    logger_st<null_sink> log("bench", null_sink{});
+    logger_st<null_sink> log(null_sink{});
+    log.set_tag("bench");
     const char* msg =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum pharetra metus cursus "
         "lacus placerat congue. Nulla egestas, mauris a tincidunt tempus, enim lectus volutpat mi, "
@@ -45,7 +46,8 @@ static void bench_null_sink_c_string(benchmark::State& state) {
 
 // Bench with fmt formatting
 static void bench_null_sink_formatted(benchmark::State& state) {
-    logger_st<null_sink> log("bench", null_sink{});
+    logger_st<null_sink> log(null_sink{});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -54,7 +56,8 @@ static void bench_null_sink_formatted(benchmark::State& state) {
 
 // Bench with logger disabled at runtime
 static void bench_disabled_runtime(benchmark::State& state) {
-    logger_st<null_sink> log("bench", null_sink{});
+    logger_st<null_sink> log(null_sink{});
+    log.set_tag("bench");
     log.set_log_level(level::off);
     int i = 0;
     for (auto _ : state) {
@@ -70,7 +73,8 @@ static logger* erase(logger& log) {
 }
 
 static void bench_disabled_runtime_erased(benchmark::State& state) {
-    logger_st<null_sink> impl("bench", null_sink{});
+    logger_st<null_sink> impl(null_sink{});
+    impl.set_tag("bench");
     impl.set_log_level(level::off);
     logger* log = erase(impl);
     int i = 0;
@@ -80,7 +84,8 @@ static void bench_disabled_runtime_erased(benchmark::State& state) {
 }
 
 static void bench_null_sink_c_string_erased(benchmark::State& state) {
-    logger_st<null_sink> impl("bench", null_sink{});
+    logger_st<null_sink> impl(null_sink{});
+    impl.set_tag("bench");
     logger* log = erase(impl);
     const char* msg =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum pharetra metus cursus "
@@ -99,7 +104,8 @@ static void bench_null_sink_c_string_erased(benchmark::State& state) {
 }
 
 static void bench_null_sink_formatted_erased(benchmark::State& state) {
-    logger_st<null_sink> impl("bench", null_sink{});
+    logger_st<null_sink> impl(null_sink{});
+    impl.set_tag("bench");
     logger* log = erase(impl);
     int i = 0;
     for (auto _ : state) {
@@ -109,7 +115,8 @@ static void bench_null_sink_formatted_erased(benchmark::State& state) {
 
 // Bench null_sink_mt with multiple threads
 static void bench_null_sink_mt(benchmark::State& state) {
-    static logger_mt<null_sink> log("bench", null_sink{});
+    static logger_mt<null_sink> log(null_sink{});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -118,7 +125,8 @@ static void bench_null_sink_mt(benchmark::State& state) {
 
 // Bench color stdout sink (single-threaded)
 static void bench_color_sink_st(benchmark::State& state) {
-    logger_st<console_sink> log("bench", console_sink{});
+    logger_st<console_sink> log(console_sink{});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -127,7 +135,8 @@ static void bench_color_sink_st(benchmark::State& state) {
 
 // Bench color stdout sink (multi-threaded)
 static void bench_color_sink_mt(benchmark::State& state) {
-    static logger_mt<console_sink> log("bench", console_sink{});
+    static logger_mt<console_sink> log(console_sink{});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -136,7 +145,8 @@ static void bench_color_sink_mt(benchmark::State& state) {
 
 // Bench basic file sink (single-threaded)
 static void bench_basic_file_st(benchmark::State& state) {
-    logger_st<file_sink> log("bench", file_sink{bench_dir() / "basic_st.log", open_mode::truncate});
+    logger_st<file_sink> log(file_sink{bench_dir() / "basic_st.log", open_mode::truncate});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -145,7 +155,8 @@ static void bench_basic_file_st(benchmark::State& state) {
 
 // Bench basic file sink (multi-threaded)
 static void bench_basic_file_mt(benchmark::State& state) {
-    static logger_mt<file_sink> log("bench", file_sink{bench_dir() / "basic_mt.log", open_mode::truncate});
+    static logger_mt<file_sink> log(file_sink{bench_dir() / "basic_mt.log", open_mode::truncate});
+    log.set_tag("bench");
     int i = 0;
     for (auto _ : state) {
         log.info("Hello logger: msg number {}...............", ++i);
@@ -159,8 +170,10 @@ static void bench_basic_file_mt(benchmark::State& state) {
 static void bench_shared_file_mt(benchmark::State& state) {
     static auto raw = std::make_shared<file_sink>(bench_dir() / "shared_mt.log", open_mode::truncate);
     static shared_sink<file_sink> wrapped(raw);
-    static logger_mt<shared_sink<file_sink>> log_a("bench_a", wrapped);
-    static logger_mt<shared_sink<file_sink>> log_b("bench_b", wrapped);
+    static logger_mt<shared_sink<file_sink>> log_a(wrapped);
+    log_a.set_tag("bench_a");
+    static logger_mt<shared_sink<file_sink>> log_b(wrapped);
+    log_b.set_tag("bench_b");
     int i = 0;
     for (auto _ : state) {
         // alternate loggers to exercise cross-logger contention on the shared lock
