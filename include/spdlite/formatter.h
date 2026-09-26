@@ -11,6 +11,7 @@
 // Platform thread-ID source for the optional [tid] header field.
 #if defined(__linux__)
     #include <unistd.h>
+    #include <sys/syscall.h>
 #elif defined(__APPLE__)
     #include <pthread.h>
 #elif defined(_WIN32)
