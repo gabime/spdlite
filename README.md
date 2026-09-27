@@ -59,9 +59,7 @@ its sinks or mutex type:
 
 ```c++
 void some_fun(spdlite::logger& log);     // accepts any logger_mt / logger_st
-std::shared_ptr<spdlite::logger> log_;  // shared ownership
-
-spdlite::logger_mt<console_sink, file_sink> logger(console_sink{}, file_sink{"app.txt"});
+spdlite::logger_mt<console_sink, file_sink> logger(console_sink{}, file_sink{"app.log"});
 some_fun(logger);
 ```
 
