@@ -21,7 +21,7 @@ Or via CMake (`find_package`, `FetchContent`, or `add_subdirectory`), link `spdl
 int main() {
     spdlite::logger_mt<spdlite::console_sink> log;
 
-    log.info("Hello {}. Value:{}", "world", 42);
+    log.info("Hello {}. Value: {}", "world", 42);
     log.warn("Something happened");
     log.error("Failed with code {}", -1);
 }
