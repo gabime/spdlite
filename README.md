@@ -58,11 +58,11 @@ Every logger derives from `spdlite::logger`, so code that receives one doesn't n
 its sinks or mutex type:
 
 ```c++
-void connect(spdlite::logger& log);     // accepts any logger_mt / logger_st
+void some_fun(spdlite::logger& log);     // accepts any logger_mt / logger_st
 std::shared_ptr<spdlite::logger> log_;  // shared ownership
 
-spdlite::logger_mt<console_sink, file_sink> app(console_sink{}, file_sink{"app.txt"});
-connect(app);
+spdlite::logger_mt<console_sink, file_sink> logger(console_sink{}, file_sink{"app.txt"});
+some_fun(logger);
 ```
 
 Level filtering and the log overloads are non-virtual, so a disabled call through
