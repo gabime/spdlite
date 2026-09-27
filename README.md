@@ -63,9 +63,6 @@ spdlite::logger_mt<console_sink, file_sink> logger(console_sink{}, file_sink{"ap
 some_fun(logger);
 ```
 
-Level filtering and the log overloads are non-virtual, so a disabled call through
-`spdlite::logger&` is still one inlined atomic load. An enabled call adds one virtual call.
-
 ## No-op logger
 
 A logger with no sinks defaults to `level::off`, so every call returns after one level check:
