@@ -29,8 +29,7 @@ int main() {
 
 Output:
 ```
-[2026-04-11 10:30:45.123] [INF] Hello world
-[2026-04-11 10:30:45.123] [INF] Value: 42
+[2026-04-11 10:30:45.123] [INF] Hello world. Value: 42
 [2026-04-11 10:30:45.123] [WRN] Something happened
 [2026-04-11 10:30:45.123] [ERR] Failed with code -1
 ```
